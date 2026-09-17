@@ -18,8 +18,8 @@ function extractFunction(name) {
     throw new Error(`Could not extract ${name}`);
 }
 
-const moduleUrl = `data:text/javascript,${encodeURIComponent(`${extractFunction("shiftedSlotValues")}\nexport { shiftedSlotValues };`)}`;
-const { shiftedSlotValues } = await import(moduleUrl);
+const moduleUrl = `data:text/javascript,${encodeURIComponent(`${extractFunction("shiftedSlotValues")}\n${extractFunction("exclusiveEnabledValues")}\n${extractFunction("normalizeEnabledValues")}\nexport { shiftedSlotValues, exclusiveEnabledValues, normalizeEnabledValues };`)}`;
+const { shiftedSlotValues, exclusiveEnabledValues, normalizeEnabledValues } = await import(moduleUrl);
 
 test("removing a prompt shifts later cards and clears the final visible slot", () => {
     const values = [
@@ -41,10 +41,18 @@ test("removing the first of ten slots keeps ordering stable", () => {
     assert.deepEqual(next[9], { title: "", enabled: false, prompt: "" });
 });
 
+test("turning one prompt on always clears every other selection", () => {
+    assert.deepEqual(exclusiveEnabledValues([true, true, false, true], 3, true), [false, false, true, false]);
+    assert.deepEqual(exclusiveEnabledValues([false, false, true], 3, false), [false, false, false]);
+    assert.deepEqual(normalizeEnabledValues([false, true, true, true]), [false, true, false, false]);
+    assert.deepEqual(normalizeEnabledValues([false, false, false]), [false, false, false]);
+});
+
 test("panel includes inline SVG icons and scrollable list styling", () => {
     assert.match(panelSource, /createElementNS\(SVG_NS, "svg"\)/);
     assert.match(panelSource, /\.ns-prompt-list \{[^}]*overflow-y: auto/s);
     assert.match(panelSource, /DEFAULT_VISIBLE_PROMPTS = 3/);
     assert.match(panelSource, /PROMPT_SLOTS = 10/);
+    assert.match(panelSource, /exclusiveEnabledValues\(normalizedEnabled, index, !enabled\)/);
     assert.doesNotMatch(panelSource, /widget\.computeSize\s*=\s*width/, "panel DOM widget must remain growable when the node is resized");
 });

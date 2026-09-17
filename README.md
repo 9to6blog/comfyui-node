@@ -4,7 +4,7 @@ ComfyUI custom nodes by 9to6. 각 기능의 코드는 별도 폴더에 관리합
 
 | 폴더 | 노드 | 기능 |
 | --- | --- | --- |
-| [prompt_switch](prompt_switch/) | **9to6 Multi Prompt Switcher** | 제목이 있는 프롬프트 카드를 추가·제거하고 ON 항목만 합쳐 출력 |
+| [prompt_switch](prompt_switch/) | **9to6 Multi Prompt Switcher** | 제목이 있는 프롬프트 카드를 추가·제거하고 한 번에 하나만 선택해 출력 |
 | [image_batch](image_batch/) | **9to6 Image Batch Loader** | 파일 다중 선택·폴더 전체 불러오기 → 이미지 목록 출력 |
 | [image_batch](image_batch/) | **9to6 Image Grid** | 처리 결과 전체를 그리드로 표시하고 클릭 확대 |
 
@@ -45,21 +45,20 @@ ComfyUI를 재시작하고 브라우저를 새로고침한 뒤 노드 검색에�
 ```text
 ON   masterpiece, best quality
 OFF  night background
-ON   soft lighting
+OFF  soft lighting
 
-출력 → masterpiece, best quality, soft lighting
+출력 → masterpiece, best quality
 ```
 
 - 기본 3개 카드, 최대 10개까지 추가·제거
 - 제목 입력란으로 `인물`, `조명`, `화풍`처럼 용도를 쉽게 구분
 - SVG 아이콘과 텍스트 라벨을 함께 사용한 고가독성 UI
 - 노드를 작게 리사이즈하면 프롬프트 카드 영역만 내부 스크롤
-- 개별 ON/OFF 스위치
+- 한 카드를 ON으로 바꾸면 이전 ON은 자동으로 OFF되는 단일 선택
+- 현재 ON을 다시 누르면 전체 OFF 가능
 - OFF 항목은 입력 내용을 보존하고 출력에서만 제외
-- 쉼표 / 줄바꿈 / 공백 구분자
-- 빈 칸 제외, 01부터 10까지 순서 유지
 - `text` → CLIP Text Encode의 텍스트 입력에 연결
-- `active_count` → 실제 포함된 프롬프트 개수
+- `active_count` → 선택한 프롬프트가 비어 있지 않으면 1, 아니면 0
 - 전체 OFF → 빈 문자열. 이미지 생성 자체를 중단시키는 기능은 아닙니다.
 
 자세한 사용법과 예제는 [prompt_switch/README.md](prompt_switch/README.md)를 참고하세요.

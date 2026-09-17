@@ -16,7 +16,7 @@ class NineToSixMultiPromptSwitch:
         inputs = {
             "separator": (
                 list(SEPARATORS),
-                {"default": "comma", "tooltip": "Separator between enabled, non-empty prompts."},
+                {"default": "comma", "tooltip": "Legacy compatibility field. A switcher outputs only one prompt."},
             ),
         }
         for index in range(1, PROMPT_SLOTS + 1):
@@ -55,14 +55,14 @@ class NineToSixMultiPromptSwitch:
     RETURN_TYPES = ("STRING", "INT")
     RETURN_NAMES = ("text", "active_count")
     OUTPUT_TOOLTIPS = (
-        "Enabled, non-empty prompts joined from 01 to 10. All OFF returns an empty string.",
-        "Number of non-empty prompts included in text.",
+        "The first enabled prompt. The UI keeps selection exclusive; all OFF returns an empty string.",
+        "1 when the selected prompt is non-empty, otherwise 0.",
     )
     FUNCTION = "combine"
     CATEGORY = "9to6/Prompt"
     DESCRIPTION = (
-        "Organize up to ten titled prompts and switch each one ON or OFF. "
-        "Only enabled, non-empty fields are joined in numeric order. "
+        "Organize up to ten titled prompts and select no more than one at a time. "
+        "Turning one prompt ON automatically turns the previous selection OFF. "
         "Connect text to a CLIP Text Encode text input."
     )
     SEARCH_ALIASES = ["multi prompt", "prompt switch", "prompt toggle", "다중 프롬프트"]
@@ -71,20 +71,21 @@ class NineToSixMultiPromptSwitch:
         if separator not in SEPARATORS:
             raise ValueError("separator must be comma, newline, or space")
 
-        selected = []
+        selected_prompt = None
         for index in range(1, PROMPT_SLOTS + 1):
             enabled_name = f"enabled_{index:02d}"
             prompt_name = f"prompt_{index:02d}"
             enabled = kwargs.get(enabled_name, index == 1)
             if not isinstance(enabled, bool):
                 raise TypeError(f"{enabled_name} must be a BOOLEAN")
-            if not enabled:
+            if not enabled or selected_prompt is not None:
                 continue
 
             prompt = kwargs.get(prompt_name, "")
             if not isinstance(prompt, str):
                 raise TypeError(f"{prompt_name} must be a STRING")
-            if prompt.strip():
-                selected.append(prompt.strip())
+            selected_prompt = prompt.strip()
 
-        return (SEPARATORS[separator].join(selected), len(selected))
+        if selected_prompt:
+            return (selected_prompt, 1)
+        return ("", 0)

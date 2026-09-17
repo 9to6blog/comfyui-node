@@ -1,6 +1,6 @@
 [project]
 name = "ninetosix-nodes"
-version = "0.3.0"
+version = "0.3.1"
 description = "A designed multi-prompt switcher, image list loading, and clickable image grids for ComfyUI."
 readme = "README.md"
 requires-python = ">=3.10"

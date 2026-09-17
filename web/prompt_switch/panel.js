@@ -54,15 +54,13 @@ function installStyles() {
         .ns-prompt-brand .ns-prompt-icon { width: 18px; height: 18px; color: var(--ns-accent); }
         .ns-prompt-count { padding: 3px 8px; color: var(--ns-accent); background: var(--ns-accent-soft); border-radius: 999px; font-weight: 700; white-space: nowrap; }
         .ns-prompt-help { grid-column: 1 / -1; color: var(--ns-muted); font-size: 11px; }
-        .ns-prompt-settings { display: grid; grid-template-columns: auto minmax(110px, 1fr); align-items: center; gap: 8px; flex: 0 0 auto; }
-        .ns-prompt-settings label { color: var(--ns-muted); font-weight: 650; }
-        .ns-prompt-panel select, .ns-prompt-panel input, .ns-prompt-panel textarea {
+        .ns-prompt-panel input, .ns-prompt-panel textarea {
             width: 100%; min-width: 0; color: var(--ns-text); background: var(--comfy-input-bg, #111318);
             border: 1px solid var(--ns-border); border-radius: 7px; outline: none;
         }
-        .ns-prompt-panel select, .ns-prompt-panel input { height: 31px; padding: 5px 9px; }
+        .ns-prompt-panel input { height: 31px; padding: 5px 9px; }
         .ns-prompt-panel textarea { min-height: 68px; padding: 8px 9px; resize: vertical; line-height: 1.45; }
-        .ns-prompt-panel select:focus, .ns-prompt-panel input:focus, .ns-prompt-panel textarea:focus {
+        .ns-prompt-panel input:focus, .ns-prompt-panel textarea:focus {
             border-color: var(--ns-accent); box-shadow: 0 0 0 2px var(--ns-accent-soft);
         }
         .ns-prompt-list { min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 8px; padding-right: 3px; scrollbar-gutter: stable; }
@@ -152,6 +150,15 @@ export function shiftedSlotValues(values, removeIndex, visibleCount) {
     return next;
 }
 
+export function exclusiveEnabledValues(values, selectedIndex, enabled) {
+    return values.map((_, index) => enabled && index === selectedIndex - 1);
+}
+
+export function normalizeEnabledValues(values) {
+    const firstEnabled = values.findIndex(Boolean);
+    return values.map((_, index) => index === firstEnabled);
+}
+
 function setVisibleCount(node, count) {
     node.properties ??= {};
     node.properties[VISIBLE_COUNT_PROPERTY] = Math.max(1, Math.min(PROMPT_SLOTS, count));
@@ -189,23 +196,8 @@ function createPromptPanel(node) {
     countBadge.className = "ns-prompt-count";
     const help = document.createElement("div");
     help.className = "ns-prompt-help";
-    help.textContent = "제목으로 구분하고, 켠 프롬프트만 순서대로 출력합니다.";
+    help.textContent = "제목으로 구분하고, 한 번에 하나의 프롬프트만 선택합니다.";
     header.append(brand, countBadge, help);
-
-    const settings = document.createElement("div");
-    settings.className = "ns-prompt-settings";
-    const separatorLabel = document.createElement("label");
-    separatorLabel.textContent = "프롬프트 구분";
-    const separator = document.createElement("select");
-    separator.setAttribute("aria-label", "프롬프트 구분자");
-    for (const [value, label] of [["comma", "쉼표  ,"], ["newline", "줄바꿈  ↵"], ["space", "공백"]]) {
-        const option = document.createElement("option");
-        option.value = value;
-        option.textContent = label;
-        separator.append(option);
-    }
-    separator.addEventListener("change", () => updateWidget(node, node.widgets?.find(item => item.name === "separator"), separator.value));
-    settings.append(separatorLabel, separator);
 
     const list = document.createElement("div");
     list.className = "ns-prompt-list";
@@ -219,7 +211,7 @@ function createPromptPanel(node) {
     const status = document.createElement("span");
     status.className = "ns-prompt-status";
     footer.append(add, status);
-    root.append(header, settings, list, footer);
+    root.append(header, list, footer);
 
     let visibleCount = deriveVisibleCount(node);
 
@@ -243,7 +235,12 @@ function createPromptPanel(node) {
     function render() {
         for (const widget of originalPromptWidgets(node)) hideNativeWidget(widget);
         visibleCount = deriveVisibleCount(node);
-        separator.value = valueOf(node.widgets?.find(item => item.name === "separator"), "comma");
+        const currentEnabled = Array.from({ length: PROMPT_SLOTS }, (_, slot) =>
+            Boolean(valueOf(slotWidget(node, "enabled", slot + 1), slot === 0)));
+        const normalizedEnabled = normalizeEnabledValues(currentEnabled);
+        for (let slot = 1; slot <= PROMPT_SLOTS; slot++) {
+            updateWidget(node, slotWidget(node, "enabled", slot), normalizedEnabled[slot - 1]);
+        }
         list.replaceChildren();
         let enabledCount = 0;
         for (let index = 1; index <= visibleCount; index++) {
@@ -277,8 +274,10 @@ function createPromptPanel(node) {
                 card.dataset.enabled = String(enabled);
             };
             toggle.addEventListener("click", () => {
-                enabled = !enabled;
-                updateWidget(node, enabledWidget, enabled);
+                const next = exclusiveEnabledValues(normalizedEnabled, index, !enabled);
+                for (let slot = 1; slot <= PROMPT_SLOTS; slot++) {
+                    updateWidget(node, slotWidget(node, "enabled", slot), next[slot - 1]);
+                }
                 render();
             });
             paintToggle();
@@ -303,7 +302,7 @@ function createPromptPanel(node) {
             list.append(card);
         }
         countBadge.textContent = `${visibleCount} / ${PROMPT_SLOTS}`;
-        status.textContent = `${enabledCount}개 ON · ${visibleCount === PROMPT_SLOTS ? "최대 개수" : "내부 스크롤 지원"}`;
+        status.textContent = `${enabledCount ? "1개 선택" : "선택 없음"} · ${visibleCount === PROMPT_SLOTS ? "최대 개수" : "내부 스크롤 지원"}`;
         add.disabled = visibleCount >= PROMPT_SLOTS;
         add.title = add.disabled ? "최대 10개까지 추가할 수 있습니다" : "새 프롬프트 추가";
     }

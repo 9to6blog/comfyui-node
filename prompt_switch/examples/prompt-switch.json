@@ -20,7 +20,7 @@
         "comma",
         true, "masterpiece",
         false, "night background",
-        true, "soft lighting",
+        false, "soft lighting",
         false, "",
         false, "",
         false, "",

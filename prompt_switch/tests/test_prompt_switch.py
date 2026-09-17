@@ -27,45 +27,50 @@ class PromptSwitchTests(unittest.TestCase):
     def run_node(self, **changes):
         return self.node.combine(**(self.inputs | changes))
 
-    def test_off_prompt_never_leaks_and_input_is_preserved(self):
+    def test_only_first_enabled_prompt_is_selected_and_input_is_preserved(self):
         self.inputs.update(
             enabled_01=True, prompt_01="masterpiece",
             enabled_02=False, prompt_02="unwanted background",
             enabled_03=True, prompt_03="soft lighting",
         )
         before = self.inputs.copy()
-        self.assertEqual(self.run_node(), ("masterpiece, soft lighting", 2))
+        self.assertEqual(self.run_node(), ("masterpiece", 1))
         self.assertEqual(self.inputs, before)
         self.assertEqual(
             self.run_node(enabled_02=True),
-            ("masterpiece, unwanted background, soft lighting", 3),
+            ("masterpiece", 1),
+        )
+        self.assertEqual(
+            self.run_node(enabled_01=False, enabled_02=True),
+            ("unwanted background", 1),
         )
 
-    def test_empty_and_whitespace_only_fields_do_not_add_separators(self):
+    def test_selected_blank_prompt_returns_empty_without_falling_through(self):
         self.assertEqual(self.run_node(
-            prompt_01="  A  ", enabled_02=True, prompt_02=" \t\n ",
-            enabled_03=True, prompt_03="", enabled_04=True, prompt_04=" B ",
-        ), ("A, B", 2))
+            enabled_01=False, enabled_02=True, prompt_02=" \t\n ",
+            enabled_03=True, prompt_03="B",
+        ), ("", 0))
 
     def test_all_off_and_all_blank_produce_an_empty_string(self):
         self.assertEqual(self.run_node(), ("", 0))
         self.assertEqual(self.run_node(enabled_01=False, prompt_01="saved text"), ("", 0))
 
-    def test_numeric_slot_order_including_slot_ten(self):
-        # Deliberately supply fields out of order.
+    def test_lowest_enabled_slot_wins_for_legacy_multi_on_workflows(self):
         self.assertEqual(self.run_node(
             enabled_10=True, prompt_10="ten",
             enabled_02=True, prompt_02="two", prompt_01="one",
-        ), ("one, two, ten", 3))
+        ), ("one", 1))
+        self.assertEqual(self.run_node(
+            enabled_01=False, enabled_02=True, prompt_02="two",
+            enabled_10=True, prompt_10="ten",
+        ), ("two", 1))
 
-    def test_separator_choices(self):
-        for mode, expected in {
-            "comma": "A, B", "newline": "A\nB", "space": "A B",
-        }.items():
+    def test_legacy_separator_choices_do_not_change_single_selection(self):
+        for mode in ("comma", "newline", "space"):
             with self.subTest(mode=mode):
                 self.assertEqual(self.run_node(
                     separator=mode, prompt_01="A", enabled_02=True, prompt_02="B",
-                ), (expected, 2))
+                ), ("A", 1))
 
     def test_unicode_prompt_syntax_and_internal_spacing_remain_literal(self):
         prompt = "한옥 🌙\n(soft light:1.2), {red|blue}, a  b, C:\\art"
@@ -75,16 +80,16 @@ class PromptSwitchTests(unittest.TestCase):
             if name.startswith("prompt_"):
                 self.assertFalse(options["dynamicPrompts"])
 
-    def test_duplicate_fragments_are_not_silently_removed(self):
+    def test_duplicate_enabled_fragments_still_produce_one_selection(self):
         self.assertEqual(self.run_node(
             prompt_01="detail", enabled_02=True, prompt_02="detail",
-        ), ("detail, detail", 2))
+        ), ("detail", 1))
 
     def test_titles_are_saved_but_never_added_to_output(self):
         self.assertEqual(self.run_node(
             title_01="인물", prompt_01="portrait",
             title_02="조명", enabled_02=True, prompt_02="soft light",
-        ), ("portrait, soft light", 2))
+        ), ("portrait", 1))
         schema = Node.INPUT_TYPES()["required"]
         self.assertEqual(schema["title_01"][1]["default"], "")
         self.assertEqual(list(schema)[-1], "title_10")
@@ -108,7 +113,7 @@ class PromptSwitchTests(unittest.TestCase):
         names = list(Node.INPUT_TYPES()["required"])
         self.assertEqual(len(node["widgets_values"]), len(names))
         restored = dict(zip(names, node["widgets_values"], strict=True))
-        self.assertEqual(self.node.combine(**restored), ("masterpiece, soft lighting", 2))
+        self.assertEqual(self.node.combine(**restored), ("masterpiece", 1))
         self.assertEqual(restored["title_01"], "품질")
         self.assertEqual(node["properties"]["ninetosixPromptCount"], 3)
 
