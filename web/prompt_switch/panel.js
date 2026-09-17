@@ -102,6 +102,10 @@ function installStyles() {
         .ns-prompt-remove:disabled, .ns-prompt-tool:disabled { cursor: default; opacity: .35; }
         .ns-prompt-remove:disabled:hover, .ns-prompt-tool:disabled:hover { color: var(--ns-muted); border-color: var(--ns-border); background: transparent; }
         .ns-prompt-status { color: var(--ns-muted); font-size: 11px; text-align: right; }
+        /* Legacy Text Toggle Switch versions use different widget names, but
+           all of them expose this DOM root. Its content is replaced by the
+           compatibility panel above, so keep the raw panel out of layout. */
+        .dom-widget:has(> .tsu-tts), .tsu-tts { display: none !important; visibility: hidden !important; pointer-events: none !important; }
         @media (max-width: 430px) {
             .ns-prompt-card-head { grid-template-columns: auto minmax(0, 1fr) auto; }
             .ns-prompt-remove { grid-column: 3; grid-row: 2; }
@@ -242,6 +246,8 @@ function createLegacyPromptPanel(node) {
         const candidates = (node.widgets ?? []).filter(item =>
             item !== compatibilityWidget && (
                 item === node._tsuTtsWidget || item.type === "tsu_sections" || item.name === "sections"
+                || item.element?.classList?.contains("tsu-tts")
+                || item.element?.querySelector?.(".tsu-tts")
             ));
         for (const oldWidget of candidates) {
             hideNativeWidget(oldWidget);
