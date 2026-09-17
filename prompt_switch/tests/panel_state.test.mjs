@@ -5,6 +5,8 @@ import { test } from "node:test";
 // this source-level test dependency-free by importing a generated data URL.
 const panelSource = await (await import("node:fs/promises")).readFile(
     new URL("../../web/prompt_switch/panel.js", import.meta.url), "utf8");
+const extensionSource = await (await import("node:fs/promises")).readFile(
+    new URL("../../web/prompt_switch/prompt_switch.js", import.meta.url), "utf8");
 
 function extractFunction(name) {
     const start = panelSource.indexOf(`export function ${name}`);
@@ -77,5 +79,7 @@ test("panel includes inline SVG icons and scrollable list styling", () => {
     assert.match(panelSource, /\.ns-prompt-panel \.ns-prompt-add \{[^}]*color: #17130c !important;[^}]*background: #ffb238 !important;/s);
     assert.match(panelSource, /\.dom-widget:has\(> \.tsu-tts\), \.tsu-tts \{[^}]*display: none !important;/s);
     assert.match(panelSource, /classList\?\.contains\("tsu-tts"\)/);
+    assert.match(extensionSource, /beforeRegisterNodeDef\(nodeType, nodeData\)/);
+    assert.match(extensionSource, /preparePromptNodeWidgets\(this\)/);
     assert.doesNotMatch(panelSource, /widget\.computeSize\s*=\s*width/, "panel DOM widget must remain growable when the node is resized");
 });

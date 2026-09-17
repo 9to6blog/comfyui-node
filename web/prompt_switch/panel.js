@@ -150,6 +150,13 @@ function hideNativeWidget(widget) {
     if (widget.inputEl) widget.inputEl.hidden = true;
 }
 
+// Called from beforeRegisterNodeDef so Vue's widget store sees these inputs as
+// hidden on its very first snapshot. Calling the same helper again while
+// mounting is intentional and keeps older LiteGraph-only builds compatible.
+export function preparePromptNodeWidgets(node) {
+    for (const widget of originalPromptWidgets(node)) hideNativeWidget(widget);
+}
+
 function valueOf(widget, fallback) {
     return widget?.value ?? fallback;
 }
@@ -435,7 +442,7 @@ function createLegacyPromptPanel(node) {
 
 function createPromptPanel(node) {
     installStyles();
-    for (const widget of originalPromptWidgets(node)) hideNativeWidget(widget);
+    preparePromptNodeWidgets(node);
 
     const root = document.createElement("section");
     root.className = "ns-prompt-panel";
