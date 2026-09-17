@@ -76,6 +76,7 @@ test("panel includes inline SVG icons and scrollable list styling", () => {
     assert.match(panelSource, /widget\.options\.hidden = true/);
     assert.match(panelSource, /widget\.type = "hidden"/);
     assert.match(panelSource, /\$pinia\?\._s\?\.get\?\.\("widgetValue"\)/);
+    assert.match(panelSource, /document\.getElementById\("vue-app"\)\?\.__vue_app__/);
     assert.match(panelSource, /widgetState\.options\.hidden = true/);
     assert.match(panelSource, /requestAnimationFrame\(\(\) => preparePromptNodeWidgets\(node\)\)/);
     assert.match(panelSource, /widget\.draw = \(\) => \{\}/);

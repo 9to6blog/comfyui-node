@@ -144,7 +144,8 @@ function hideNativeWidget(widget) {
     // legacy widget object alone is not enough after that copy is registered.
     // Reach the already-initialized Pinia store through the Vue app when it is
     // available, without importing a private hashed frontend module.
-    const widgetValueStore = app.vueApp?.config?.globalProperties?.$pinia?._s?.get?.("widgetValue");
+    const vueApp = app.vueApp ?? document.getElementById("vue-app")?.__vue_app__;
+    const widgetValueStore = vueApp?.config?.globalProperties?.$pinia?._s?.get?.("widgetValue");
     const widgetState = widget.widgetId ? widgetValueStore?.getWidget?.(widget.widgetId) : null;
     if (widgetState?.options) widgetState.options.hidden = true;
     widget.type = "hidden";
