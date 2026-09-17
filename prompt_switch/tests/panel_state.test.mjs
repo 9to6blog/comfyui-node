@@ -75,6 +75,9 @@ test("panel includes inline SVG icons and scrollable list styling", () => {
     assert.match(panelSource, /widget\.hidden = true/);
     assert.match(panelSource, /widget\.options\.hidden = true/);
     assert.match(panelSource, /widget\.type = "hidden"/);
+    assert.match(panelSource, /\$pinia\?\._s\?\.get\?\.\("widgetValue"\)/);
+    assert.match(panelSource, /widgetState\.options\.hidden = true/);
+    assert.match(panelSource, /requestAnimationFrame\(\(\) => preparePromptNodeWidgets\(node\)\)/);
     assert.match(panelSource, /widget\.draw = \(\) => \{\}/);
     assert.match(panelSource, /\.ns-prompt-panel \.ns-prompt-add \{[^}]*color: #17130c !important;[^}]*background: #ffb238 !important;/s);
     assert.match(panelSource, /\.dom-widget:has\(> \.tsu-tts\), \.tsu-tts \{[^}]*display: none !important;/s);

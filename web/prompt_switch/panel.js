@@ -125,20 +125,28 @@ function originalPromptWidgets(node) {
 }
 
 function hideNativeWidget(widget) {
-    if (widget.__ninetosixHidden) return;
-    widget.__ninetosixHidden = {
-        type: widget.type,
-        computeSize: widget.computeSize,
-        draw: widget.draw,
-        hidden: widget.hidden,
-        optionsHidden: widget.options?.hidden,
-    };
+    if (!widget.__ninetosixHidden) {
+        widget.__ninetosixHidden = {
+            type: widget.type,
+            computeSize: widget.computeSize,
+            draw: widget.draw,
+            hidden: widget.hidden,
+            optionsHidden: widget.options?.hidden,
+        };
+    }
     // Current Vue canvas rendering uses options.hidden, while older
     // LiteGraph builds use the hidden widget type and zero computed height.
     // Set every supported signal so the serialized backend widget remains in
     // place without being painted above the replacement panel.
     widget.options ??= {};
     widget.options.hidden = true;
+    // ComfyUI's Vue canvas keeps a reactive copy of each widget. Updating the
+    // legacy widget object alone is not enough after that copy is registered.
+    // Reach the already-initialized Pinia store through the Vue app when it is
+    // available, without importing a private hashed frontend module.
+    const widgetValueStore = app.vueApp?.config?.globalProperties?.$pinia?._s?.get?.("widgetValue");
+    const widgetState = widget.widgetId ? widgetValueStore?.getWidget?.(widget.widgetId) : null;
+    if (widgetState?.options) widgetState.options.hidden = true;
     widget.type = "hidden";
     widget.hidden = true;
     widget.computeSize = () => [0, -4];
@@ -593,6 +601,8 @@ function createPromptPanel(node) {
     // Give only new/legacy nodes a practical first size; modern saved workflows
     // carry the count property and keep the user's chosen dimensions.
     requestAnimationFrame(() => {
+        preparePromptNodeWidgets(node);
+        requestAnimationFrame(() => preparePromptNodeWidgets(node));
         if (!Object.hasOwn(node.properties ?? {}, VISIBLE_COUNT_PROPERTY)) {
             node.setSize?.([Math.max(420, node.size?.[0] ?? 0), 600]);
         }
