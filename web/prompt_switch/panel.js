@@ -5,6 +5,8 @@ export const DEFAULT_VISIBLE_PROMPTS = 3;
 export const VISIBLE_COUNT_PROPERTY = "ninetosixPromptCount";
 
 const PANEL_KEY = Symbol.for("9to6.promptSwitch.panel");
+const LEGACY_NODE_TYPE = "TextToggleSwitchNode";
+const LEGACY_MAX_SLOTS = 32;
 const STYLE_ID = "ninetosix-prompt-switch-styles";
 const SVG_NS = "http://www.w3.org/2000/svg";
 
@@ -14,6 +16,9 @@ const ICONS = {
     power: ["M12 2v10", "M6.34 5.34a8 8 0 1 0 11.32 0"],
     prompt: ["M5 4h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2", "M7 9h10M7 13h6"],
     title: ["M4 5h16M12 5v14M8 19h8"],
+    up: ["M12 19V5", "M6 11l6-6 6 6"],
+    down: ["M12 5v14", "M6 13l6 6 6-6"],
+    copy: ["M8 8h11v11H8z", "M5 16V5h11"],
 };
 
 function svgIcon(name) {
@@ -66,28 +71,31 @@ function installStyles() {
         .ns-prompt-list { min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 8px; padding-right: 3px; scrollbar-gutter: stable; }
         .ns-prompt-card { flex: 0 0 auto; padding: 9px; border: 1px solid var(--ns-border); border-radius: 9px; background: var(--ns-card); }
         .ns-prompt-card[data-enabled="true"] { border-color: color-mix(in srgb, var(--ns-accent) 55%, var(--ns-border)); }
-        .ns-prompt-card-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 7px; align-items: center; margin-bottom: 7px; }
+        .ns-prompt-card-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto auto; gap: 7px; align-items: center; margin-bottom: 7px; }
         .ns-prompt-index { width: 24px; text-align: center; color: var(--ns-muted); font-size: 11px; font-variant-numeric: tabular-nums; font-weight: 700; }
         .ns-prompt-title-wrap, .ns-prompt-text-wrap { position: relative; display: block; }
         .ns-prompt-title-wrap .ns-prompt-icon { position: absolute; left: 8px; top: 8px; width: 15px; height: 15px; color: var(--ns-muted); pointer-events: none; }
         .ns-prompt-title-wrap input { padding-left: 29px; font-weight: 650; }
         .ns-prompt-text-wrap .ns-prompt-icon { position: absolute; left: 8px; top: 9px; width: 15px; height: 15px; color: var(--ns-muted); pointer-events: none; }
         .ns-prompt-text-wrap textarea { padding-left: 29px; }
-        .ns-prompt-toggle, .ns-prompt-remove, .ns-prompt-add {
+        .ns-prompt-toggle, .ns-prompt-remove, .ns-prompt-tool, .ns-prompt-add {
             display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 31px; border: 1px solid var(--ns-border);
             border-radius: 7px; background: transparent; cursor: pointer; transition: background .12s ease, border-color .12s ease, color .12s ease;
         }
         .ns-prompt-toggle { min-width: 61px; padding: 0 8px; color: var(--ns-muted); font-size: 11px; font-weight: 800; }
         .ns-prompt-toggle[aria-checked="true"] { color: #17130c; border-color: var(--ns-accent); background: var(--ns-accent); }
-        .ns-prompt-remove { width: 31px; padding: 0; color: var(--ns-muted); }
+        .ns-prompt-remove, .ns-prompt-tool { width: 31px; padding: 0; color: var(--ns-muted); }
+        .ns-prompt-card-tools { display: inline-flex; gap: 4px; }
+        .ns-prompt-card-tools .ns-prompt-tool { width: 28px; height: 28px; }
+        .ns-prompt-tool:hover { color: #fff; border-color: color-mix(in srgb, var(--ns-accent) 55%, var(--ns-border)); background: var(--ns-accent-soft); }
         .ns-prompt-remove:hover { color: #fff; border-color: #e45d65; background: #b8323c; }
         .ns-prompt-icon { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; flex: 0 0 auto; }
         .ns-prompt-footer { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; flex: 0 0 auto; }
         .ns-prompt-add { padding: 0 13px; justify-self: start; color: #17130c; border-color: var(--ns-accent); background: var(--ns-accent); font-weight: 800; }
         .ns-prompt-add:hover, .ns-prompt-toggle[aria-checked="true"]:hover { filter: brightness(1.08); }
         .ns-prompt-add:disabled { cursor: default; filter: grayscale(1); opacity: .45; }
-        .ns-prompt-remove:disabled { cursor: default; opacity: .35; }
-        .ns-prompt-remove:disabled:hover { color: var(--ns-muted); border-color: var(--ns-border); background: transparent; }
+        .ns-prompt-remove:disabled, .ns-prompt-tool:disabled { cursor: default; opacity: .35; }
+        .ns-prompt-remove:disabled:hover, .ns-prompt-tool:disabled:hover { color: var(--ns-muted); border-color: var(--ns-border); background: transparent; }
         .ns-prompt-status { color: var(--ns-muted); font-size: 11px; text-align: right; }
         @media (max-width: 430px) {
             .ns-prompt-card-head { grid-template-columns: auto minmax(0, 1fr) auto; }
@@ -159,6 +167,20 @@ export function normalizeEnabledValues(values) {
     return values.map((_, index) => index === firstEnabled);
 }
 
+export function normalizeLegacyState(state) {
+    const source = state && typeof state === "object" ? state : {};
+    const count = Math.max(1, Math.min(32, Math.round(Number(source.count) || 3)));
+    const titles = Array.from({ length: count }, (_, index) =>
+        String(Array.isArray(source.titles) ? source.titles[index] ?? `프롬프트 ${index + 1}` : `프롬프트 ${index + 1}`));
+    const texts = Array.from({ length: count }, (_, index) =>
+        String(Array.isArray(source.texts) ? source.texts[index] ?? "" : ""));
+    const rawEnabled = Array.from({ length: count }, (_, index) =>
+        Boolean(Array.isArray(source.enabled) ? source.enabled[index] : index === 0));
+    const firstEnabled = rawEnabled.findIndex(Boolean);
+    const enabled = rawEnabled.map((_, index) => index === (firstEnabled < 0 ? 0 : firstEnabled));
+    return { count, titles, texts, enabled };
+}
+
 function setVisibleCount(node, count) {
     node.properties ??= {};
     node.properties[VISIBLE_COUNT_PROPERTY] = Math.max(1, Math.min(PROMPT_SLOTS, count));
@@ -174,6 +196,201 @@ function createInput(type, placeholder, ariaLabel) {
     control.setAttribute("data-ninetosix-prompt-input", "");
     control.autocomplete = "off";
     return control;
+}
+
+function markNodeChanged(node) {
+    node.graph?.change?.();
+    node.setDirtyCanvas?.(true, true);
+    app.canvas?.setDirty?.(true, true);
+}
+
+function smallIconButton(iconName, title, onClick, disabled = false, remove = false) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `ns-prompt-tool${remove ? " ns-prompt-remove" : ""}`;
+    button.title = title;
+    button.setAttribute("aria-label", title);
+    if (remove) button.dataset.remove = "true";
+    button.disabled = disabled;
+    button.append(svgIcon(iconName));
+    button.addEventListener("click", onClick);
+    return button;
+}
+
+function createLegacyPromptPanel(node) {
+    installStyles();
+    const rawWidget = node.widgets?.find(item => item.name === "slots_json");
+    if (rawWidget) hideNativeWidget(rawWidget);
+
+    function hideOldPanel() {
+        const oldWidget = node._tsuTtsWidget;
+        if (!oldWidget) return;
+        hideNativeWidget(oldWidget);
+        if (oldWidget.element) oldWidget.element.hidden = true;
+    }
+    hideOldPanel();
+
+    const root = document.createElement("section");
+    root.className = "ns-prompt-panel";
+    root.dataset.ninetosix = "prompt-switcher";
+    root.dataset.compatibility = "TextToggleSwitchNode";
+    root.setAttribute("aria-label", "9to6 Multi Prompt Switcher");
+    root.addEventListener("pointerdown", event => event.stopPropagation());
+    root.addEventListener("wheel", event => event.stopPropagation(), { passive: true });
+
+    const header = document.createElement("header");
+    header.className = "ns-prompt-header";
+    const brand = document.createElement("div");
+    brand.className = "ns-prompt-brand";
+    brand.append(svgIcon("prompt"), document.createTextNode("9to6 Multi Prompt Switcher"));
+    const countBadge = document.createElement("span");
+    countBadge.className = "ns-prompt-count";
+    const help = document.createElement("div");
+    help.className = "ns-prompt-help";
+    help.textContent = "기존 워크플로 호환 모드 · 한 번에 하나만 선택합니다.";
+    header.append(brand, countBadge, help);
+
+    const list = document.createElement("div");
+    list.className = "ns-prompt-list";
+    list.setAttribute("role", "list");
+    const footer = document.createElement("footer");
+    footer.className = "ns-prompt-footer";
+    const add = document.createElement("button");
+    add.type = "button";
+    add.className = "ns-prompt-add";
+    add.append(svgIcon("add"), document.createTextNode("프롬프트 추가"));
+    const status = document.createElement("span");
+    status.className = "ns-prompt-status";
+    footer.append(add, status);
+    root.append(header, list, footer);
+
+    function getState() {
+        node.properties ??= {};
+        node.properties.tsu_tts = normalizeLegacyState(node.properties.tsu_tts);
+        return node.properties.tsu_tts;
+    }
+
+    function changed() {
+        markNodeChanged(node);
+        render();
+    }
+
+    function render() {
+        hideOldPanel();
+        if (rawWidget) hideNativeWidget(rawWidget);
+        const state = getState();
+        list.replaceChildren();
+
+        for (let index = 0; index < state.count; index++) {
+            const card = document.createElement("article");
+            card.className = "ns-prompt-card";
+            card.dataset.enabled = String(state.enabled[index]);
+            card.setAttribute("role", "listitem");
+            const cardHead = document.createElement("div");
+            cardHead.className = "ns-prompt-card-head";
+            const number = document.createElement("span");
+            number.className = "ns-prompt-index";
+            number.textContent = String(index + 1).padStart(2, "0");
+
+            const titleWrap = document.createElement("label");
+            titleWrap.className = "ns-prompt-title-wrap";
+            const title = createInput("text", "제목 · 예: 조명, 화풍, 인물", `프롬프트 ${index + 1} 제목`);
+            title.value = state.titles[index];
+            title.addEventListener("input", () => {
+                state.titles[index] = title.value;
+                markNodeChanged(node);
+            });
+            titleWrap.append(svgIcon("title"), title);
+
+            const tools = document.createElement("div");
+            tools.className = "ns-prompt-card-tools";
+            const move = offset => {
+                const target = index + offset;
+                if (target < 0 || target >= state.count) return;
+                for (const values of [state.titles, state.texts, state.enabled]) {
+                    [values[index], values[target]] = [values[target], values[index]];
+                }
+                changed();
+            };
+            tools.append(
+                smallIconButton("up", `프롬프트 ${index + 1} 위로 이동`, () => move(-1), index === 0),
+                smallIconButton("down", `프롬프트 ${index + 1} 아래로 이동`, () => move(1), index === state.count - 1),
+                smallIconButton("copy", `프롬프트 ${index + 1} 복제`, () => {
+                    if (state.count >= LEGACY_MAX_SLOTS) return;
+                    state.titles.splice(index + 1, 0, `${state.titles[index]} 복사본`);
+                    state.texts.splice(index + 1, 0, state.texts[index]);
+                    state.enabled.splice(index + 1, 0, false);
+                    state.count++;
+                    changed();
+                }, state.count >= LEGACY_MAX_SLOTS),
+            );
+
+            const toggle = document.createElement("button");
+            toggle.type = "button";
+            toggle.className = "ns-prompt-toggle";
+            toggle.setAttribute("role", "switch");
+            toggle.setAttribute("aria-checked", String(state.enabled[index]));
+            toggle.setAttribute("aria-label", `프롬프트 ${index + 1} ${state.enabled[index] ? "켜짐" : "꺼짐"}`);
+            toggle.append(svgIcon("power"), document.createTextNode(state.enabled[index] ? "ON" : "OFF"));
+            toggle.addEventListener("click", () => {
+                state.enabled = state.enabled.map((_, item) => item === index);
+                changed();
+            });
+
+            const remove = smallIconButton("remove", `프롬프트 ${index + 1} 제거`, () => {
+                if (state.count <= 1) return;
+                const wasEnabled = state.enabled[index];
+                state.titles.splice(index, 1);
+                state.texts.splice(index, 1);
+                state.enabled.splice(index, 1);
+                state.count--;
+                if (wasEnabled || !state.enabled.some(Boolean)) {
+                    state.enabled = state.enabled.map((_, item) => item === Math.min(index, state.count - 1));
+                }
+                changed();
+            }, state.count <= 1, true);
+            cardHead.append(number, titleWrap, tools, toggle, remove);
+
+            const promptWrap = document.createElement("label");
+            promptWrap.className = "ns-prompt-text-wrap";
+            const prompt = createInput("textarea", "프롬프트 내용을 입력하세요…", `프롬프트 ${index + 1} 내용`);
+            prompt.value = state.texts[index];
+            prompt.addEventListener("input", () => {
+                state.texts[index] = prompt.value;
+                markNodeChanged(node);
+            });
+            promptWrap.append(svgIcon("prompt"), prompt);
+            card.append(cardHead, promptWrap);
+            list.append(card);
+        }
+
+        countBadge.textContent = `${state.count} / ${LEGACY_MAX_SLOTS}`;
+        status.textContent = `1개 선택 · 기존 데이터 유지`;
+        add.disabled = state.count >= LEGACY_MAX_SLOTS;
+        add.title = add.disabled ? "최대 32개까지 추가할 수 있습니다" : "새 프롬프트 추가";
+    }
+
+    add.addEventListener("click", () => {
+        const state = getState();
+        if (state.count >= LEGACY_MAX_SLOTS) return;
+        state.count++;
+        state.titles.push(`프롬프트 ${state.count}`);
+        state.texts.push("");
+        state.enabled.push(false);
+        changed();
+        list.lastElementChild?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        list.lastElementChild?.querySelector("input")?.focus({ preventScroll: true });
+    });
+
+    const widget = node.addDOMWidget("9to6_prompt_switcher", "NINETOSIX_PROMPT_SWITCHER", root, {
+        serialize: false,
+        hideOnZoom: false,
+        getMinHeight: () => 190,
+        getMaxHeight: () => 1200,
+    });
+    widget.options.minNodeSize = [400, 300];
+    render();
+    return { widget, root, refresh: render };
 }
 
 function createPromptPanel(node) {
@@ -337,8 +554,11 @@ function createPromptPanel(node) {
 }
 
 export function mountPromptPanel(node) {
-    if ((node.comfyClass ?? node.type) !== "NineToSixMultiPromptSwitch") return null;
-    if (!node[PANEL_KEY]) node[PANEL_KEY] = createPromptPanel(node);
+    const nodeType = node.comfyClass ?? node.type;
+    if (nodeType !== "NineToSixMultiPromptSwitch" && nodeType !== LEGACY_NODE_TYPE) return null;
+    if (!node[PANEL_KEY]) {
+        node[PANEL_KEY] = nodeType === LEGACY_NODE_TYPE ? createLegacyPromptPanel(node) : createPromptPanel(node);
+    }
     else node[PANEL_KEY].refresh();
     return node[PANEL_KEY];
 }

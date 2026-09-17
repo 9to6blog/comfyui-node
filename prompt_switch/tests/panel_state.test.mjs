@@ -18,8 +18,8 @@ function extractFunction(name) {
     throw new Error(`Could not extract ${name}`);
 }
 
-const moduleUrl = `data:text/javascript,${encodeURIComponent(`${extractFunction("shiftedSlotValues")}\n${extractFunction("exclusiveEnabledValues")}\n${extractFunction("normalizeEnabledValues")}\nexport { shiftedSlotValues, exclusiveEnabledValues, normalizeEnabledValues };`)}`;
-const { shiftedSlotValues, exclusiveEnabledValues, normalizeEnabledValues } = await import(moduleUrl);
+const moduleUrl = `data:text/javascript,${encodeURIComponent(`${extractFunction("shiftedSlotValues")}\n${extractFunction("exclusiveEnabledValues")}\n${extractFunction("normalizeEnabledValues")}\n${extractFunction("normalizeLegacyState")}\nexport { shiftedSlotValues, exclusiveEnabledValues, normalizeEnabledValues, normalizeLegacyState };`)}`;
+const { shiftedSlotValues, exclusiveEnabledValues, normalizeEnabledValues, normalizeLegacyState } = await import(moduleUrl);
 
 test("removing a prompt shifts later cards and clears the final visible slot", () => {
     const values = [
@@ -48,11 +48,27 @@ test("turning one prompt on always clears every other selection", () => {
     assert.deepEqual(normalizeEnabledValues([false, false, false]), [false, false, false]);
 });
 
+test("legacy dynamic switch data keeps content but normalizes to one ON", () => {
+    const state = normalizeLegacyState({
+        count: 4,
+        titles: ["A", "B", "C", "D"],
+        texts: ["one", "two", "three", "four"],
+        enabled: [false, true, true, false],
+    });
+    assert.equal(state.count, 4);
+    assert.deepEqual(state.titles, ["A", "B", "C", "D"]);
+    assert.deepEqual(state.texts, ["one", "two", "three", "four"]);
+    assert.deepEqual(state.enabled, [false, true, false, false]);
+    assert.deepEqual(normalizeLegacyState(null).enabled, [true, false, false]);
+});
+
 test("panel includes inline SVG icons and scrollable list styling", () => {
     assert.match(panelSource, /createElementNS\(SVG_NS, "svg"\)/);
     assert.match(panelSource, /\.ns-prompt-list \{[^}]*overflow-y: auto/s);
     assert.match(panelSource, /DEFAULT_VISIBLE_PROMPTS = 3/);
     assert.match(panelSource, /PROMPT_SLOTS = 10/);
     assert.match(panelSource, /exclusiveEnabledValues\(normalizedEnabled, index, !enabled\)/);
+    assert.match(panelSource, /LEGACY_NODE_TYPE = "TextToggleSwitchNode"/);
+    assert.match(panelSource, /dataset\.compatibility = "TextToggleSwitchNode"/);
     assert.doesNotMatch(panelSource, /widget\.computeSize\s*=\s*width/, "panel DOM widget must remain growable when the node is resized");
 });
