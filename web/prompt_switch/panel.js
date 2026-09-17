@@ -131,8 +131,15 @@ function hideNativeWidget(widget) {
         computeSize: widget.computeSize,
         draw: widget.draw,
         hidden: widget.hidden,
+        optionsHidden: widget.options?.hidden,
     };
-    widget.type = "converted-widget";
+    // Current Vue canvas rendering uses options.hidden, while older
+    // LiteGraph builds use the hidden widget type and zero computed height.
+    // Set every supported signal so the serialized backend widget remains in
+    // place without being painted above the replacement panel.
+    widget.options ??= {};
+    widget.options.hidden = true;
+    widget.type = "hidden";
     widget.hidden = true;
     widget.computeSize = () => [0, -4];
     // Some ComfyUI/widget versions continue calling draw even when a

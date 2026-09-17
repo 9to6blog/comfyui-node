@@ -71,6 +71,8 @@ test("panel includes inline SVG icons and scrollable list styling", () => {
     assert.match(panelSource, /LEGACY_NODE_TYPE = "TextToggleSwitchNode"/);
     assert.match(panelSource, /dataset\.compatibility = "TextToggleSwitchNode"/);
     assert.match(panelSource, /widget\.hidden = true/);
+    assert.match(panelSource, /widget\.options\.hidden = true/);
+    assert.match(panelSource, /widget\.type = "hidden"/);
     assert.match(panelSource, /widget\.draw = \(\) => \{\}/);
     assert.match(panelSource, /\.ns-prompt-panel \.ns-prompt-add \{[^}]*color: #17130c !important;[^}]*background: #ffb238 !important;/s);
     assert.match(panelSource, /\.dom-widget:has\(> \.tsu-tts\), \.tsu-tts \{[^}]*display: none !important;/s);
