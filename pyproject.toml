@@ -1,0 +1,17 @@
+[project]
+name = "ninetosix-prompt-switch"
+version = "0.1.1"
+description = "Write multiple prompts and output only enabled ones, using native ComfyUI switches."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+dependencies = []
+classifiers = ["Operating System :: OS Independent"]
+
+[project.urls]
+Repository = "https://github.com/9to6blog/comfyui-node"
+
+[tool.comfy]
+# Copy your actual publisher ID from registry.comfy.org before publishing.
+PublisherId = ""
+DisplayName = "9to6 Prompt Switch"

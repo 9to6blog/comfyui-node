@@ -1,0 +1,79 @@
+"""Join only enabled prompt fields, without any external dependencies."""
+
+PROMPT_SLOTS = 10
+SEPARATORS = {
+    "comma": ", ",
+    "newline": "\n",
+    "space": " ",
+}
+
+
+class NineToSixMultiPromptSwitch:
+    """Keep prompt fragments in a workflow and include only enabled ones."""
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        inputs = {
+            "separator": (
+                list(SEPARATORS),
+                {"default": "comma", "tooltip": "Separator between enabled, non-empty prompts."},
+            ),
+        }
+        for index in range(1, PROMPT_SLOTS + 1):
+            inputs[f"enabled_{index:02d}"] = (
+                "BOOLEAN",
+                {
+                    "default": index == 1,
+                    "label_on": "ON",
+                    "label_off": "OFF",
+                    "tooltip": f"Include prompt {index:02d}. OFF keeps its text in your workflow.",
+                },
+            )
+            inputs[f"prompt_{index:02d}"] = (
+                "STRING",
+                {
+                    "default": "",
+                    "multiline": True,
+                    "dynamicPrompts": False,
+                    "placeholder": f"Prompt {index:02d}",
+                    "tooltip": "Literal text. Blank fields are skipped; internal formatting is preserved.",
+                },
+            )
+        return {"required": inputs}
+
+    RETURN_TYPES = ("STRING", "INT")
+    RETURN_NAMES = ("text", "active_count")
+    OUTPUT_TOOLTIPS = (
+        "Enabled, non-empty prompts joined from 01 to 10. All OFF returns an empty string.",
+        "Number of non-empty prompts included in text.",
+    )
+    FUNCTION = "combine"
+    CATEGORY = "9to6/Prompt"
+    DESCRIPTION = (
+        "Write up to ten prompts and switch each one ON or OFF. "
+        "Only enabled, non-empty fields are joined in numeric order. "
+        "Connect text to a CLIP Text Encode text input."
+    )
+    SEARCH_ALIASES = ["multi prompt", "prompt switch", "prompt toggle", "다중 프롬프트"]
+
+    def combine(self, separator="comma", **kwargs):
+        if separator not in SEPARATORS:
+            raise ValueError("separator must be comma, newline, or space")
+
+        selected = []
+        for index in range(1, PROMPT_SLOTS + 1):
+            enabled_name = f"enabled_{index:02d}"
+            prompt_name = f"prompt_{index:02d}"
+            enabled = kwargs.get(enabled_name, index == 1)
+            if not isinstance(enabled, bool):
+                raise TypeError(f"{enabled_name} must be a BOOLEAN")
+            if not enabled:
+                continue
+
+            prompt = kwargs.get(prompt_name, "")
+            if not isinstance(prompt, str):
+                raise TypeError(f"{prompt_name} must be a STRING")
+            if prompt.strip():
+                selected.append(prompt.strip())
+
+        return (SEPARATORS[separator].join(selected), len(selected))

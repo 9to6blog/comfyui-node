@@ -1,0 +1,5 @@
+.github/
+prompt_switch/tests/
+scripts/
+PUBLISHING.md
+package.json

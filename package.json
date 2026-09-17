@@ -1,0 +1,9 @@
+{
+  "name": "comfyui-node-development",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test prompt_switch/tests/shortcut_guard.test.mjs"
+  },
+  "engines": { "node": ">=20" }
+}
