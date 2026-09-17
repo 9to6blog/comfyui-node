@@ -5,6 +5,8 @@ ComfyUI custom nodes by 9to6. 각 기능의 코드는 별도 폴더에 관리합
 | 폴더 | 노드 | 기능 |
 | --- | --- | --- |
 | [prompt_switch](prompt_switch/) | **9to6 Multi Prompt Switch** | 10개 프롬프트 중 ON인 항목만 합쳐 출력 |
+| [image_batch](image_batch/) | **9to6 Image Batch Loader** | 파일 다중 선택·폴더 전체 불러오기 → 이미지 목록 출력 |
+| [image_batch](image_batch/) | **9to6 Image Grid** | 처리 결과 전체를 그리드로 표시하고 클릭 확대 |
 
 ## 설치
 
@@ -14,9 +16,29 @@ ComfyUI의 `custom_nodes` 폴더에서 실행합니다.
 git clone https://github.com/9to6blog/comfyui-node.git
 ```
 
-ComfyUI를 재시작하고 브라우저를 새로고침한 뒤 **9to6 Multi Prompt Switch**를 검색하세요. 저장소 루트의 `__init__.py`가 하위 폴더의 노드와 프런트엔드 확장을 연결하므로 저장소 전체를 설치하면 됩니다. 추가 pip 설치는 필요 없습니다. 비공개 저장소인 경우 해당 저장소의 접근 권한이 필요합니다.
+ComfyUI를 재시작하고 브라우저를 새로고침한 뒤 노드 검색에서 **9to6**를 검색하세요. 저장소 루트의 `__init__.py`가 하위 폴더의 노드와 프런트엔드 확장을 연결하므로 저장소 전체를 설치하면 됩니다. 추가 pip 설치는 필요 없습니다. 비공개 저장소인 경우 해당 저장소의 접근 권한이 필요합니다.
 
-수동 설치는 저장소 전체를 `ComfyUI/custom_nodes/comfyui-node/`에 복사합니다. 설치 경로 안에 `__init__.py`와 `prompt_switch/`가 함께 있어야 합니다. 저장소 전체와 `prompt_switch/` 폴더를 동시에 별도 설치하면 같은 노드가 중복 등록되므로 둘 중 하나만 설치합니다.
+수동 설치는 저장소 전체를 `ComfyUI/custom_nodes/comfyui-node/`에 복사합니다. 설치 경로 안에 루트 `__init__.py`, `prompt_switch/`, `image_batch/`, `web/`가 함께 있어야 합니다. 하위 폴더를 별도 중복 설치하지 않습니다. 기존 설치는 해당 폴더에서 `git pull` 후 ComfyUI를 재시작하고 브라우저를 새로고침하세요.
+
+## 이미지 다중 선택 → 처리 → 결과 그리드
+
+```text
+9to6 Image Batch Loader
+  ├─ Select images: 여러 파일 선택
+  ├─ Select folder: 브라우저에서 폴더 업로드
+  └─ server_folder: ComfyUI 실행 PC의 폴더 경로
+                │ images (각 항목은 이미지 1장)
+                ▼
+       이미지 처리 노드들
+                │
+                ▼
+       9to6 Image Grid
+       전체 결과 그리드 → 클릭 확대 / 이전·다음 / 줌
+```
+
+한 번 실행하면 선택한 이미지 목록 전체를 처리합니다. 다른 해상도의 이미지를 강제로 같은 크기로 합치지 않습니다. 마지막 그리드는 이미지 목록과 텐서 배치에 포함된 결과를 모두 펼쳐 보여줍니다.
+
+[이미지 노드 사용법](image_batch/README.md)과 [예제 워크플로](image_batch/examples/image-batch-to-grid.json)를 참고하세요.
 
 ## 프롬프트 스위치
 
@@ -48,12 +70,15 @@ ON   soft lighting
 
 ```powershell
 python -m unittest discover -s prompt_switch/tests -v
-node --test prompt_switch/tests/shortcut_guard.test.mjs
+python -m unittest discover -s image_batch/tests -v
+npm test
 ```
 
-Python 3.10 이상, JavaScript 테스트는 Node.js 20 이상을 사용합니다. 노드 실행 자체에 Node.js는 필요 없습니다. CI는 Python 3.10/3.13과 Node.js 24에서 위 검사를 실행합니다.
+Python 3.10 이상, JavaScript 테스트는 Node.js 20 이상을 사용합니다. 이미지 테스트에는 ComfyUI 환경에 포함된 torch, numpy, Pillow가 필요합니다. 노드 실행 자체에 Node.js는 필요 없습니다. CI는 Python 3.10/3.13과 Node.js 24에서 위 검사를 실행합니다.
 
-테스트는 프롬프트 선택 로직, 예제 복원, 루트/하위 폴더 로더, 브라우저 기본 저장 차단 및 이벤트 전달을 확인합니다. 실제 사용자의 ComfyUI 환경에서 이미지 생성까지 검증한 것은 아닙니다.
+자동 테스트 33개로 프롬프트 선택, 이미지 순서·원본 크기·마스크·캐시 갱신, 그리드 결과, 예제 복원, 브라우저 기본 저장 차단과 이벤트 전달을 확인했습니다.
+
+별도 Windows CPU 환경의 **ComfyUI 0.36.0 / Frontend 1.52.7**에서 `Image Batch Loader → Invert Image → Image Grid`를 실제 실행했습니다. 파일 다중 업로드, 폴더 업로드, 서버 폴더 읽기, 순서 변경 후 워크플로 저장·복원, 결과 개수·해상도, 클릭 확대·이전/다음·줌·Esc 닫기를 확인했습니다. 모델을 이용한 이미지 생성과 외부 커스텀 노드별 호환성은 이 검사에 포함하지 않았습니다.
 
 ## Comfy Registry
 

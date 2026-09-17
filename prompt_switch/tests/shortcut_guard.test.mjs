@@ -5,7 +5,7 @@ import {
     createSaveShortcutGuard,
     isPromptInput,
     markPromptInputs,
-} from "../web/shortcut_guard.js";
+} from "../../web/prompt_switch/shortcut_guard.js";
 
 function input({ marked = true, tagName = "TEXTAREA", nodeId = null } = {}) {
     const attributes = new Map(marked ? [["data-ninetosix-prompt-input", ""]] : []);
@@ -95,4 +95,11 @@ test("Vue inputs resolve against the active graph including subgraphs", () => {
 test("the root graph is used when there is no active canvas graph", () => {
     const target = input({ marked: false, nodeId: "1" });
     assert.equal(isPromptInput(target, { graph: { getNodeById: () => ({ comfyClass: NODE_TYPE }) } }), true);
+});
+
+test("the image loader's folder input also prevents browser Save Page", () => {
+    const target = input({marked: false, tagName: "INPUT", nodeId: "9"});
+    const event = keyEvent(target);
+    createSaveShortcutGuard({graph: {getNodeById: () => ({type: "NineToSixImageBatchLoader"})}})(event);
+    assert.equal(event.defaultPrevented, true);
 });

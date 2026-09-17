@@ -1,7 +1,10 @@
 """Load the node collection when this repository is installed in custom_nodes."""
 
-from .prompt_switch import NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS
+from .prompt_switch import NODE_CLASS_MAPPINGS as PROMPT_NODES, NODE_DISPLAY_NAME_MAPPINGS as PROMPT_NAMES
+from .image_batch import NODE_CLASS_MAPPINGS as IMAGE_NODES, NODE_DISPLAY_NAME_MAPPINGS as IMAGE_NAMES
 
-WEB_DIRECTORY = "./prompt_switch/web"
+NODE_CLASS_MAPPINGS = {**PROMPT_NODES, **IMAGE_NODES}
+NODE_DISPLAY_NAME_MAPPINGS = {**PROMPT_NAMES, **IMAGE_NAMES}
+WEB_DIRECTORY = "./web"
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS", "WEB_DIRECTORY"]

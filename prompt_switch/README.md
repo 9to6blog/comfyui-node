@@ -30,7 +30,7 @@ Write multiple prompts, keep them in your workflow, and output only the ones swi
 저장소: https://github.com/9to6blog/comfyui-node . Comfy Registry에는 아직 게시하지 않았습니다.
 
 1. 저장소 전체를 `ComfyUI/custom_nodes/comfyui-node/`에 설치합니다. [루트 설치 안내](../README.md)를 참고하세요.
-2. 루트 `__init__.py`와 `prompt_switch/`가 함께 있어야 합니다. 이 폴더만 설치할 경우에는 `prompt_switch/__init__.py`와 `prompt_switch/web/`를 포함하여 복사합니다. 두 방식을 동시에 사용하지 않습니다.
+2. 루트 `__init__.py`, `prompt_switch/`, `image_batch/`, `web/`를 포함한 저장소 전체를 설치합니다. 프런트엔드 확장은 버전 0.2.0부터 공통 `web/` 폴더에서 관리합니다.
 3. ComfyUI를 재시작하고 브라우저를 새로고침합니다.
 4. 노드 검색에서 **9to6 Multi Prompt Switch**를 추가합니다. 메뉴 경로는 `9to6 / Prompt`입니다.
 
@@ -65,7 +65,7 @@ node --test prompt_switch/tests/shortcut_guard.test.mjs
 
 테스트는 OFF 제외, ON 복구, 입력 보존, 전체 OFF, 빈 칸, 숫자 순서, 구분자, 한글·프롬프트 문법, 중복 보존, 잘못된 타입, 예제 위젯 값의 복원을 확인합니다.
 
-현재 개발 환경에는 실행 중인 ComfyUI가 없어 실제 ComfyUI 화면에서의 표시와 이미지 생성 연결은 아직 검증하지 않았습니다. Python 로직 테스트 결과와 실제 앱 통합 검증을 구분합니다.
+프롬프트 결합 로직과 단축키 처리는 위 자동 테스트로 확인합니다. 별도 ComfyUI 테스트 환경에서 노드 팩 로딩과 이미지 노드의 화면·실행은 확인했으며, 프롬프트를 모델의 이미지 생성에 연결하는 검사는 포함하지 않았습니다.
 
 ## GitHub / Manager 게시
 

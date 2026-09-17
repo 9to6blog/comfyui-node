@@ -112,8 +112,9 @@ class PromptSwitchTests(unittest.TestCase):
         repo_spec.loader.exec_module(repo_module)
         node_type = repo_module.NODE_CLASS_MAPPINGS["NineToSixMultiPromptSwitch"]
         self.assertEqual(node_type().combine(prompt_01="loaded"), ("loaded", 1))
-        self.assertTrue((repository / repo_module.WEB_DIRECTORY / "prompt_switch.js").is_file())
-        self.assertTrue((ROOT / package.WEB_DIRECTORY / "prompt_switch.js").is_file())
+        self.assertTrue((repository / repo_module.WEB_DIRECTORY / "prompt_switch" / "prompt_switch.js").is_file())
+        self.assertIn("NineToSixImageBatchLoader", repo_module.NODE_CLASS_MAPPINGS)
+        self.assertIn("NineToSixImageGrid", repo_module.NODE_CLASS_MAPPINGS)
 
 
 if __name__ == "__main__":

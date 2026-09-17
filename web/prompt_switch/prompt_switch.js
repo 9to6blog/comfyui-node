@@ -1,4 +1,4 @@
-import { app } from "../../scripts/app.js";
+import { app } from "../../../scripts/app.js";
 import { createSaveShortcutGuard, markPromptInputs } from "./shortcut_guard.js";
 
 const LISTENER_KEY = Symbol.for("9to6.promptSwitch.saveShortcutGuard");

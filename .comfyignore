@@ -1,5 +1,6 @@
 .github/
 prompt_switch/tests/
+image_batch/tests/
 scripts/
 PUBLISHING.md
 package.json

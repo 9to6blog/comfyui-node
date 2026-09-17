@@ -1,14 +1,15 @@
 export const NODE_TYPE = "NineToSixMultiPromptSwitch";
+const PROTECTED_NODES = new Set([NODE_TYPE, "NineToSixImageBatchLoader"]);
 const INPUT_MARKER = "data-ninetosix-prompt-input";
 
 function isPromptNode(node) {
-    return node?.comfyClass === NODE_TYPE || node?.type === NODE_TYPE;
+    return PROTECTED_NODES.has(node?.comfyClass ?? node?.type);
 }
 
 export function markPromptInputs(node) {
     if (!isPromptNode(node)) return;
     for (const widget of node.widgets ?? []) {
-        if (!/^prompt_\d{2}$/.test(widget.name)) continue;
+        if (!/^prompt_\d{2}$/.test(widget.name) && widget.name !== "folder") continue;
         // element is the current API; inputEl supports older ComfyUI releases.
         const element = widget.element ?? widget.inputEl;
         element?.setAttribute?.(INPUT_MARKER, "");
