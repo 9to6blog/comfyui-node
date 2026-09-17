@@ -6,7 +6,7 @@
       "id": 1,
       "type": "NineToSixMultiPromptSwitch",
       "pos": [160, 100],
-      "size": [440, 1520],
+      "size": [460, 620],
       "flags": {},
       "order": 0,
       "mode": 0,
@@ -15,7 +15,7 @@
         {"name": "text", "type": "STRING", "links": null, "slot_index": 0},
         {"name": "active_count", "type": "INT", "links": null, "slot_index": 1}
       ],
-      "properties": {"Node name for S&R": "NineToSixMultiPromptSwitch"},
+      "properties": {"Node name for S&R": "NineToSixMultiPromptSwitch", "ninetosixPromptCount": 3},
       "widgets_values": [
         "comma",
         true, "masterpiece",
@@ -27,7 +27,8 @@
         false, "",
         false, "",
         false, "",
-        false, ""
+        false, "",
+        "품질", "배경", "조명", "", "", "", "", "", "", ""
       ]
     }
   ],

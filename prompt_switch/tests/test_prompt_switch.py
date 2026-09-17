@@ -80,6 +80,15 @@ class PromptSwitchTests(unittest.TestCase):
             prompt_01="detail", enabled_02=True, prompt_02="detail",
         ), ("detail, detail", 2))
 
+    def test_titles_are_saved_but_never_added_to_output(self):
+        self.assertEqual(self.run_node(
+            title_01="인물", prompt_01="portrait",
+            title_02="조명", enabled_02=True, prompt_02="soft light",
+        ), ("portrait, soft light", 2))
+        schema = Node.INPUT_TYPES()["required"]
+        self.assertEqual(schema["title_01"][1]["default"], "")
+        self.assertEqual(list(schema)[-1], "title_10")
+
     def test_bad_switch_values_are_not_treated_as_truthy(self):
         for bad_value in ("false", "true", 0, 1, None):
             with self.subTest(value=bad_value):
@@ -100,6 +109,8 @@ class PromptSwitchTests(unittest.TestCase):
         self.assertEqual(len(node["widgets_values"]), len(names))
         restored = dict(zip(names, node["widgets_values"], strict=True))
         self.assertEqual(self.node.combine(**restored), ("masterpiece, soft lighting", 2))
+        self.assertEqual(restored["title_01"], "품질")
+        self.assertEqual(node["properties"]["ninetosixPromptCount"], 3)
 
     def test_repository_root_loads_nested_nodes_and_web_extension(self):
         repository = ROOT.parent

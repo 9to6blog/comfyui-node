@@ -1,5 +1,6 @@
 import { app } from "../../../scripts/app.js";
 import { createSaveShortcutGuard, markPromptInputs } from "./shortcut_guard.js";
+import { mountPromptPanel } from "./panel.js";
 
 const LISTENER_KEY = Symbol.for("9to6.promptSwitch.saveShortcutGuard");
 
@@ -15,8 +16,10 @@ app.registerExtension({
     },
     nodeCreated(node) {
         markPromptInputs(node);
+        mountPromptPanel(node);
     },
     loadedGraphNode(node) {
         markPromptInputs(node);
+        mountPromptPanel(node);
     },
 });

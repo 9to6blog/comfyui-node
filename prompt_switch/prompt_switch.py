@@ -39,6 +39,17 @@ class NineToSixMultiPromptSwitch:
                     "tooltip": "Literal text. Blank fields are skipped; internal formatting is preserved.",
                 },
             )
+        # Keep titles after the original separator/enabled/prompt fields.  This
+        # preserves the widget order used by workflows created before v0.3.
+        for index in range(1, PROMPT_SLOTS + 1):
+            inputs[f"title_{index:02d}"] = (
+                "STRING",
+                {
+                    "default": "",
+                    "placeholder": f"Prompt {index:02d} title",
+                    "tooltip": "A workflow-only label that helps identify this prompt. It is not included in the output.",
+                },
+            )
         return {"required": inputs}
 
     RETURN_TYPES = ("STRING", "INT")
@@ -50,7 +61,7 @@ class NineToSixMultiPromptSwitch:
     FUNCTION = "combine"
     CATEGORY = "9to6/Prompt"
     DESCRIPTION = (
-        "Write up to ten prompts and switch each one ON or OFF. "
+        "Organize up to ten titled prompts and switch each one ON or OFF. "
         "Only enabled, non-empty fields are joined in numeric order. "
         "Connect text to a CLIP Text Encode text input."
     )

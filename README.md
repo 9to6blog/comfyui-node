@@ -4,7 +4,7 @@ ComfyUI custom nodes by 9to6. 각 기능의 코드는 별도 폴더에 관리합
 
 | 폴더 | 노드 | 기능 |
 | --- | --- | --- |
-| [prompt_switch](prompt_switch/) | **9to6 Multi Prompt Switch** | 10개 프롬프트 중 ON인 항목만 합쳐 출력 |
+| [prompt_switch](prompt_switch/) | **9to6 Multi Prompt Switcher** | 제목이 있는 프롬프트 카드를 추가·제거하고 ON 항목만 합쳐 출력 |
 | [image_batch](image_batch/) | **9to6 Image Batch Loader** | 파일 다중 선택·폴더 전체 불러오기 → 이미지 목록 출력 |
 | [image_batch](image_batch/) | **9to6 Image Grid** | 처리 결과 전체를 그리드로 표시하고 클릭 확대 |
 
@@ -40,7 +40,7 @@ ComfyUI를 재시작하고 브라우저를 새로고침한 뒤 노드 검색에�
 
 [이미지 노드 사용법](image_batch/README.md)과 [예제 워크플로](image_batch/examples/image-batch-to-grid.json)를 참고하세요.
 
-## 프롬프트 스위치
+## 9to6 멀티 프롬프트 스위처
 
 ```text
 ON   masterpiece, best quality
@@ -50,7 +50,11 @@ ON   soft lighting
 출력 → masterpiece, best quality, soft lighting
 ```
 
-- 프롬프트 10칸 + 개별 ON/OFF 스위치
+- 기본 3개 카드, 최대 10개까지 추가·제거
+- 제목 입력란으로 `인물`, `조명`, `화풍`처럼 용도를 쉽게 구분
+- SVG 아이콘과 텍스트 라벨을 함께 사용한 고가독성 UI
+- 노드를 작게 리사이즈하면 프롬프트 카드 영역만 내부 스크롤
+- 개별 ON/OFF 스위치
 - OFF 항목은 입력 내용을 보존하고 출력에서만 제외
 - 쉼표 / 줄바꿈 / 공백 구분자
 - 빈 칸 제외, 01부터 10까지 순서 유지
@@ -76,7 +80,7 @@ npm test
 
 Python 3.10 이상, JavaScript 테스트는 Node.js 20 이상을 사용합니다. 이미지 테스트에는 ComfyUI 환경에 포함된 torch, numpy, Pillow가 필요합니다. 노드 실행 자체에 Node.js는 필요 없습니다. CI는 Python 3.10/3.13과 Node.js 24에서 위 검사를 실행합니다.
 
-자동 테스트 33개로 프롬프트 선택, 이미지 순서·원본 크기·마스크·캐시 갱신, 그리드 결과, 예제 복원, 브라우저 기본 저장 차단과 이벤트 전달을 확인했습니다.
+자동 테스트로 프롬프트 선택·제목 비출력·카드 제거 순서·SVG/스크롤 UI 규칙, 이미지 순서·원본 크기·마스크·캐시 갱신, 그리드 결과, 예제 복원, 브라우저 기본 저장 차단과 이벤트 전달을 확인합니다.
 
 별도 Windows CPU 환경의 **ComfyUI 0.36.0 / Frontend 1.52.7**에서 `Image Batch Loader → Invert Image → Image Grid`를 실제 실행했습니다. 파일 다중 업로드, 폴더 업로드, 서버 폴더 읽기, 순서 변경 후 워크플로 저장·복원, 결과 개수·해상도, 클릭 확대·이전/다음·줌·Esc 닫기를 확인했습니다. 모델을 이용한 이미지 생성과 외부 커스텀 노드별 호환성은 이 검사에 포함하지 않았습니다.
 

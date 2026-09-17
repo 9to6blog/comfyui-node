@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test prompt_switch/tests/shortcut_guard.test.mjs image_batch/tests/common.test.mjs"
+    "test": "node --test prompt_switch/tests/shortcut_guard.test.mjs prompt_switch/tests/panel_state.test.mjs image_batch/tests/common.test.mjs"
   },
   "engines": { "node": ">=20" }
 }

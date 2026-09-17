@@ -7,7 +7,7 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "NineToSixMultiPromptSwitch": "9to6 Multi Prompt Switch",
+    "NineToSixMultiPromptSwitch": "9to6 Multi Prompt Switcher",
 }
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]
