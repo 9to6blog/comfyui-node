@@ -91,7 +91,12 @@ function installStyles() {
         .ns-prompt-remove:hover { color: #fff; border-color: #e45d65; background: #b8323c; }
         .ns-prompt-icon { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; flex: 0 0 auto; }
         .ns-prompt-footer { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; flex: 0 0 auto; }
-        .ns-prompt-add { padding: 0 13px; justify-self: start; color: #17130c; border-color: var(--ns-accent); background: var(--ns-accent); font-weight: 800; }
+        .ns-prompt-panel .ns-prompt-add {
+            padding: 0 13px; justify-self: start; color: #17130c !important;
+            border-color: #ffb238 !important; background: #ffb238 !important;
+            font-weight: 850; text-shadow: none !important; opacity: 1;
+        }
+        .ns-prompt-panel .ns-prompt-add .ns-prompt-icon { color: #17130c !important; }
         .ns-prompt-add:hover, .ns-prompt-toggle[aria-checked="true"]:hover { filter: brightness(1.08); }
         .ns-prompt-add:disabled { cursor: default; filter: grayscale(1); opacity: .45; }
         .ns-prompt-remove:disabled, .ns-prompt-tool:disabled { cursor: default; opacity: .35; }
@@ -117,9 +122,19 @@ function originalPromptWidgets(node) {
 
 function hideNativeWidget(widget) {
     if (widget.__ninetosixHidden) return;
-    widget.__ninetosixHidden = { type: widget.type, computeSize: widget.computeSize };
+    widget.__ninetosixHidden = {
+        type: widget.type,
+        computeSize: widget.computeSize,
+        draw: widget.draw,
+        hidden: widget.hidden,
+    };
     widget.type = "converted-widget";
+    widget.hidden = true;
     widget.computeSize = () => [0, -4];
+    // Some ComfyUI/widget versions continue calling draw even when a
+    // converted widget reports zero height. A no-op draw prevents the raw
+    // title/prompt fields from leaking behind the designed DOM panel.
+    widget.draw = () => {};
     if (widget.element) widget.element.hidden = true;
     if (widget.inputEl) widget.inputEl.hidden = true;
 }
@@ -221,12 +236,17 @@ function createLegacyPromptPanel(node) {
     installStyles();
     const rawWidget = node.widgets?.find(item => item.name === "slots_json");
     if (rawWidget) hideNativeWidget(rawWidget);
+    let compatibilityWidget = null;
 
     function hideOldPanel() {
-        const oldWidget = node._tsuTtsWidget;
-        if (!oldWidget) return;
-        hideNativeWidget(oldWidget);
-        if (oldWidget.element) oldWidget.element.hidden = true;
+        const candidates = (node.widgets ?? []).filter(item =>
+            item !== compatibilityWidget && (
+                item === node._tsuTtsWidget || item.type === "tsu_sections" || item.name === "sections"
+            ));
+        for (const oldWidget of candidates) {
+            hideNativeWidget(oldWidget);
+            if (oldWidget.element) oldWidget.element.hidden = true;
+        }
     }
     hideOldPanel();
 
@@ -388,8 +408,15 @@ function createLegacyPromptPanel(node) {
         getMinHeight: () => 190,
         getMaxHeight: () => 1200,
     });
+    compatibilityWidget = widget;
     widget.options.minNodeSize = [400, 300];
     render();
+    // The legacy extension may append its DOM widget after the global
+    // nodeCreated hook. Hide that late widget once creation callbacks finish.
+    requestAnimationFrame(() => {
+        hideOldPanel();
+        node.setDirtyCanvas?.(true, true);
+    });
     return { widget, root, refresh: render };
 }
 

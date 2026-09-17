@@ -70,5 +70,8 @@ test("panel includes inline SVG icons and scrollable list styling", () => {
     assert.match(panelSource, /exclusiveEnabledValues\(normalizedEnabled, index, !enabled\)/);
     assert.match(panelSource, /LEGACY_NODE_TYPE = "TextToggleSwitchNode"/);
     assert.match(panelSource, /dataset\.compatibility = "TextToggleSwitchNode"/);
+    assert.match(panelSource, /widget\.hidden = true/);
+    assert.match(panelSource, /widget\.draw = \(\) => \{\}/);
+    assert.match(panelSource, /\.ns-prompt-panel \.ns-prompt-add \{[^}]*color: #17130c !important;[^}]*background: #ffb238 !important;/s);
     assert.doesNotMatch(panelSource, /widget\.computeSize\s*=\s*width/, "panel DOM widget must remain growable when the node is resized");
 });
