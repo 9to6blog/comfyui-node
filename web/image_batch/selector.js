@@ -102,6 +102,7 @@ export function createImageSelector(node, inputName, inputData, api, app) {
         const supported = [...files].filter(file => IMAGE_EXTENSIONS.test(file.name));
         if (fromFolder) supported.sort((a, b) => (a.webkitRelativePath || a.name).localeCompare(b.webkitRelativePath || b.name, undefined, { numeric: true }));
         if (!supported.length) { message("No supported image files selected.", true); return; }
+        entries = [];
         busy = true;
         render();
         const uploaded = [], failures = [];
@@ -128,7 +129,7 @@ export function createImageSelector(node, inputName, inputData, api, app) {
                 }
             }
             if (disposed) return;
-            change([...entries, ...uploaded]);
+            change(uploaded);
             if (uploaded.length) {
                 const source = node.widgets?.find(item => item.name === "source");
                 if (source) source.value = "selected_files";
@@ -137,7 +138,7 @@ export function createImageSelector(node, inputName, inputData, api, app) {
             busy = false;
             if (!disposed) {
                 render();
-                if (failures.length) message(`${uploaded.length} added; ${failures.length} failed. ${failures.join("; ")}`, true);
+                if (failures.length) message(`${uploaded.length} loaded; ${failures.length} failed. ${failures.join("; ")}`, true);
             }
         }
     }
