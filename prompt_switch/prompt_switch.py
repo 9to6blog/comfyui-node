@@ -50,24 +50,26 @@ class NineToSixMultiPromptSwitch:
                     "tooltip": "A workflow-only label that helps identify this prompt. It is not included in the output.",
                 },
             )
-        return {"required": inputs}
+        return {"required": inputs, "optional": {"clip": ("CLIP",)}}
 
-    RETURN_TYPES = ("STRING", "INT")
-    RETURN_NAMES = ("text", "active_count")
+    RETURN_TYPES = ("STRING", "INT", "CONDITIONING")
+    RETURN_NAMES = ("text", "active_count", "conditioning")
     OUTPUT_TOOLTIPS = (
         "The first enabled prompt. The UI keeps selection exclusive; all OFF returns an empty string.",
         "1 when the selected prompt is non-empty, otherwise 0.",
+        "Encoded with the connected CLIP model. Connect a CLIP model to enable this output.",
     )
     FUNCTION = "combine"
     CATEGORY = "9to6/Prompt"
     DESCRIPTION = (
         "Organize up to ten titled prompts and select no more than one at a time. "
         "Turning one prompt ON automatically turns the previous selection OFF. "
-        "Connect text to a CLIP Text Encode text input."
+        "Connect text to a CLIP Text Encode text input, or connect a CLIP model "
+        "to use the conditioning output directly."
     )
     SEARCH_ALIASES = ["multi prompt", "prompt switch", "prompt toggle", "다중 프롬프트"]
 
-    def combine(self, separator="comma", **kwargs):
+    def combine(self, separator="comma", clip=None, **kwargs):
         if separator not in SEPARATORS:
             raise ValueError("separator must be comma, newline, or space")
 
@@ -86,6 +88,10 @@ class NineToSixMultiPromptSwitch:
                 raise TypeError(f"{prompt_name} must be a STRING")
             selected_prompt = prompt.strip()
 
-        if selected_prompt:
-            return (selected_prompt, 1)
-        return ("", 0)
+        text = selected_prompt or ""
+        active = 1 if selected_prompt else 0
+        conditioning = None
+        if clip is not None:
+            tokens = clip.tokenize(text)
+            conditioning = clip.encode_from_tokens_scheduled(tokens)
+        return (text, active, conditioning)

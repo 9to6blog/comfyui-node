@@ -17,6 +17,7 @@ const ICONS = {
     fit: ["M8 3H3v5", "M16 3h5v5", "M8 21H3v-5", "M16 21h5v-5"],
     actual: ["M4 4h16v16H4z", "M9 9h6v6H9z"],
     close: ["M5 5l14 14", "M19 5 5 19"],
+    compare: ["M12 3v18", "M3 7h6l3 5-3 5H3z", "M21 7h-6l-3 5 3 5h6z"],
 };
 
 export function svgIcon(name) {
@@ -128,6 +129,15 @@ export function installStyles() {
     .ns-image-stage { min-width:100%; min-height:100%; display:flex; padding:16px; width:max-content; height:max-content; }
     .ns-image-stage img { display:block; margin:auto; max-width:none; max-height:none; object-fit:contain; }
     .ns-image-error { color:#ffb8b8; padding:8px; }
+    .ns-compare-stage { display:flex; flex-direction:column; gap:8px; }
+    .ns-compare-pair { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .ns-compare-slider { position:relative; overflow:hidden; border-radius:8px; background:#11151c; line-height:0; }
+    .ns-compare-slider img { width:100%; display:block; }
+    .ns-compare-clip { position:absolute; inset:0 auto 0 0; width:50%; overflow:hidden; }
+    .ns-compare-clip img { width:0; min-width:0; }
+    .ns-compare-divider { position:absolute; top:0; bottom:0; left:50%; width:2px; margin-left:-1px; background:#ffb238; pointer-events:none; box-shadow:0 0 6px rgba(0,0,0,.6); }
+    .ns-compare-range { position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:ew-resize; margin:0; }
+    .ns-image-toolbar button[data-active="true"] { color:#17130c !important; border-color:#ffb238 !important; background:#ffb238 !important; }
     `;
     document.head.append(style);
 }

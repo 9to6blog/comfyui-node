@@ -13,7 +13,7 @@ import numpy as np
 from PIL import Image
 import torch
 
-from image_batch.nodes import NineToSixImageBatchLoader, NineToSixImageGrid, collect_paths
+from image_batch.nodes import NineToSixImageBatchLoader, NineToSixImageCompare, NineToSixImageGrid, collect_paths
 
 
 class ImageBatchTests(unittest.TestCase):
@@ -167,6 +167,71 @@ class ImageBatchTests(unittest.TestCase):
         for images in ([], [torch.zeros((3, 4, 3))]):
             with self.subTest(images=images), self.assertRaises(ValueError):
                 self.grid.show_grid(images, [4], [180])
+
+    def test_grid_uses_connected_labels_for_tile_titles(self):
+        frames = [torch.zeros((1, 4, 4, 3)), torch.ones((1, 4, 4, 3))]
+        result = self.grid.show_grid(frames, [2], [100], labels=["원본", "결과"])
+        rows = result["ui"]["ninetosix_images"]
+        self.assertEqual([row["label"] for row in rows], ["원본", "결과"])
+        unlabeled = self.grid.show_grid(frames, [2], [100])
+        self.assertEqual([row["label"] for row in unlabeled["ui"]["ninetosix_images"]], [None, None])
+
+
+class ImageCompareTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.preview = Path(self.temp.name) / "temp"
+        self.preview.mkdir()
+        self.folder_paths = types.SimpleNamespace(get_temp_directory=lambda: str(self.preview))
+        self.patch = patch.dict(sys.modules, {"folder_paths": self.folder_paths})
+        self.patch.start()
+        self.addCleanup(self.patch.stop)
+        self.compare = NineToSixImageCompare()
+
+    def pair(self):
+        a = torch.zeros((1, 6, 8, 3))
+        a[0, :, :, 0] = 1
+        b = torch.zeros((1, 6, 8, 3))
+        b[0, :, :, 1] = 1
+        return a, b
+
+    def test_compare_saves_previews_and_passes_through_originals(self):
+        a, b = self.pair()
+        result = self.compare.compare(a, b, "side_by_side", "원본,결과")
+        data = result["ui"]["ninetosix_compare"]
+        self.assertEqual(data["a"]["label"], "원본")
+        self.assertEqual(data["b"]["label"], "결과")
+        self.assertEqual(data["mode"], "side_by_side")
+        self.assertFalse(data["difference"])
+        directory = self.preview / data["a"]["subfolder"]
+        for name in ("a.png", "b.png", "preview.png"):
+            self.assertTrue((directory / name).is_file())
+        self.assertTrue(torch.equal(result["result"][0], a))
+        self.assertTrue(torch.equal(result["result"][1], b))
+
+    def test_difference_mode_highlights_pixel_changes(self):
+        a, b = self.pair()
+        result = self.compare.compare(a, b, "difference", "A,B")
+        data = result["ui"]["ninetosix_compare"]
+        self.assertTrue(data["difference"])
+        directory = self.preview / data["a"]["subfolder"]
+        with Image.open(directory / "preview.png") as heatmap:
+            pixel = heatmap.convert("RGB").getpixel((0, 0))
+        self.assertGreater(pixel[0], 0)
+
+    def test_compare_rejects_mismatched_shapes_and_batches(self):
+        a, b = self.pair()
+        with self.assertRaisesRegex(ValueError, "same dimensions"):
+            self.compare.compare(a, torch.zeros((1, 4, 4, 3)), "side_by_side", "")
+        with self.assertRaisesRegex(ValueError, "exactly one image"):
+            self.compare.compare(torch.cat([a, a]), b, "side_by_side", "")
+
+    def test_default_labels_apply_when_labels_are_blank(self):
+        a, b = self.pair()
+        data = self.compare.compare(a, b, "slider", "")["ui"]["ninetosix_compare"]
+        self.assertEqual(data["a"]["label"], "A")
+        self.assertEqual(data["b"]["label"], "B")
 
 
 if __name__ == "__main__":

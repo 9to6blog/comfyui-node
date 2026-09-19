@@ -34,47 +34,71 @@ class PromptSwitchTests(unittest.TestCase):
             enabled_03=True, prompt_03="soft lighting",
         )
         before = self.inputs.copy()
-        self.assertEqual(self.run_node(), ("masterpiece", 1))
+        self.assertEqual(self.run_node(), ("masterpiece", 1, None))
         self.assertEqual(self.inputs, before)
         self.assertEqual(
             self.run_node(enabled_02=True),
-            ("masterpiece", 1),
+            ("masterpiece", 1, None),
         )
         self.assertEqual(
             self.run_node(enabled_01=False, enabled_02=True),
-            ("unwanted background", 1),
+            ("unwanted background", 1, None),
         )
 
     def test_selected_blank_prompt_returns_empty_without_falling_through(self):
         self.assertEqual(self.run_node(
             enabled_01=False, enabled_02=True, prompt_02=" \t\n ",
             enabled_03=True, prompt_03="B",
-        ), ("", 0))
+        ), ("", 0, None))
 
     def test_all_off_and_all_blank_produce_an_empty_string(self):
-        self.assertEqual(self.run_node(), ("", 0))
-        self.assertEqual(self.run_node(enabled_01=False, prompt_01="saved text"), ("", 0))
+        self.assertEqual(self.run_node(), ("", 0, None))
+        self.assertEqual(self.run_node(enabled_01=False, prompt_01="saved text"), ("", 0, None))
+
+    def test_connected_clip_encodes_the_selected_prompt(self):
+        class FakeClip:
+            def __init__(self):
+                self.calls = []
+
+            def tokenize(self, text):
+                self.calls.append(("tokenize", text))
+                return {"tokens": text}
+
+            def encode_from_tokens_scheduled(self, tokens):
+                self.calls.append(("encode", tokens))
+                return [("cond", tokens)]
+
+        clip = FakeClip()
+        self.assertEqual(
+            self.run_node(clip=clip, prompt_01="castle", enabled_01=True),
+            ("castle", 1, [("cond", {"tokens": "castle"})]),
+        )
+        self.assertEqual(clip.calls, [("tokenize", "castle"), ("encode", {"tokens": "castle"})])
+
+        empty_clip = FakeClip()
+        self.assertEqual(self.run_node(clip=empty_clip, enabled_01=False), ("", 0, [("cond", {"tokens": ""})]))
+        self.assertEqual(empty_clip.calls, [("tokenize", ""), ("encode", {"tokens": ""})])
 
     def test_lowest_enabled_slot_wins_for_legacy_multi_on_workflows(self):
         self.assertEqual(self.run_node(
             enabled_10=True, prompt_10="ten",
             enabled_02=True, prompt_02="two", prompt_01="one",
-        ), ("one", 1))
+        ), ("one", 1, None))
         self.assertEqual(self.run_node(
             enabled_01=False, enabled_02=True, prompt_02="two",
             enabled_10=True, prompt_10="ten",
-        ), ("two", 1))
+        ), ("two", 1, None))
 
     def test_legacy_separator_choices_do_not_change_single_selection(self):
         for mode in ("comma", "newline", "space"):
             with self.subTest(mode=mode):
                 self.assertEqual(self.run_node(
                     separator=mode, prompt_01="A", enabled_02=True, prompt_02="B",
-                ), ("A", 1))
+                ), ("A", 1, None))
 
     def test_unicode_prompt_syntax_and_internal_spacing_remain_literal(self):
         prompt = "한옥 🌙\n(soft light:1.2), {red|blue}, a  b, C:\\art"
-        self.assertEqual(self.run_node(prompt_01=prompt), (prompt, 1))
+        self.assertEqual(self.run_node(prompt_01=prompt), (prompt, 1, None))
         schema = Node.INPUT_TYPES()["required"]
         for name, (_, options) in schema.items():
             if name.startswith("prompt_"):
@@ -83,13 +107,13 @@ class PromptSwitchTests(unittest.TestCase):
     def test_duplicate_enabled_fragments_still_produce_one_selection(self):
         self.assertEqual(self.run_node(
             prompt_01="detail", enabled_02=True, prompt_02="detail",
-        ), ("detail", 1))
+        ), ("detail", 1, None))
 
     def test_titles_are_saved_but_never_added_to_output(self):
         self.assertEqual(self.run_node(
             title_01="인물", prompt_01="portrait",
             title_02="조명", enabled_02=True, prompt_02="soft light",
-        ), ("portrait", 1))
+        ), ("portrait", 1, None))
         schema = Node.INPUT_TYPES()["required"]
         self.assertEqual(schema["title_01"][1]["default"], "")
         self.assertEqual(list(schema)[-1], "title_10")
@@ -113,7 +137,7 @@ class PromptSwitchTests(unittest.TestCase):
         names = list(Node.INPUT_TYPES()["required"])
         self.assertEqual(len(node["widgets_values"]), len(names))
         restored = dict(zip(names, node["widgets_values"], strict=True))
-        self.assertEqual(self.node.combine(**restored), ("masterpiece", 1))
+        self.assertEqual(self.node.combine(**restored), ("masterpiece", 1, None))
         self.assertEqual(restored["title_01"], "품질")
         self.assertEqual(node["properties"]["ninetosixPromptCount"], 3)
 
@@ -127,9 +151,10 @@ class PromptSwitchTests(unittest.TestCase):
         sys.modules[repo_spec.name] = repo_module
         repo_spec.loader.exec_module(repo_module)
         node_type = repo_module.NODE_CLASS_MAPPINGS["NineToSixMultiPromptSwitch"]
-        self.assertEqual(node_type().combine(prompt_01="loaded"), ("loaded", 1))
+        self.assertEqual(node_type().combine(prompt_01="loaded"), ("loaded", 1, None))
         self.assertTrue((repository / repo_module.WEB_DIRECTORY / "prompt_switch" / "prompt_switch.js").is_file())
         self.assertIn("NineToSixImageBatchLoader", repo_module.NODE_CLASS_MAPPINGS)
+        self.assertIn("NineToSixImageCompare", repo_module.NODE_CLASS_MAPPINGS)
         self.assertIn("NineToSixImageGrid", repo_module.NODE_CLASS_MAPPINGS)
 
 

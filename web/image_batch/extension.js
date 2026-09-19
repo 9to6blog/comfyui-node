@@ -2,6 +2,7 @@ import { app } from "../../../scripts/app.js";
 import { api } from "../../../scripts/api.js";
 import { createImageSelector } from "./selector.js";
 import { createGallery } from "./gallery.js";
+import { createCompare } from "./compare.js";
 
 app.registerExtension({
     name: "9to6.ImageBatch",
@@ -13,6 +14,8 @@ app.registerExtension({
         };
     },
     nodeCreated(node) {
-        if ((node.comfyClass ?? node.type) === "NineToSixImageGrid") createGallery(node, api);
+        const nodeType = node.comfyClass ?? node.type;
+        if (nodeType === "NineToSixImageGrid") createGallery(node, api);
+        if (nodeType === "NineToSixImageCompare") createCompare(node, api);
     },
 });

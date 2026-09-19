@@ -157,6 +157,8 @@ class NineToSixImageGrid:
             "images": ("IMAGE",),
             "columns": ("INT", {"default": 4, "min": 1, "max": 12}),
             "thumbnail_size": ("INT", {"default": 180, "min": 80, "max": 512, "step": 10}),
+        }, "optional": {
+            "labels": ("STRING",),
         }}
 
     INPUT_IS_LIST = True
@@ -169,7 +171,7 @@ class NineToSixImageGrid:
     DESCRIPTION = "Collect all received images into a clickable grid. Click for a full-resolution preview."
     SEARCH_ALIASES = ["image gallery", "grid preview", "contact sheet", "이미지 그리드"]
 
-    def show_grid(self, images, columns, thumbnail_size):
+    def show_grid(self, images, columns, thumbnail_size, labels=None):
         import folder_paths
         import numpy as np
         from PIL import Image
@@ -177,6 +179,13 @@ class NineToSixImageGrid:
         column_count, size = int(columns[0]), int(thumbnail_size[0])
         if not 1 <= column_count <= 12 or not 80 <= size <= 512:
             raise ValueError("Grid columns or thumbnail size is outside the supported range.")
+        frame_labels = []
+        if labels:
+            for batch in labels:
+                if isinstance(batch, str):
+                    frame_labels.append(batch)
+                else:
+                    frame_labels.extend(str(item) for item in batch)
         frames = []
         for batch in images:
             if len(batch.shape) != 4 or batch.shape[-1] not in (1, 3, 4):
@@ -203,8 +212,80 @@ class NineToSixImageGrid:
             small.thumbnail((size * 2, size * 2), Image.Resampling.LANCZOS)
             small.save(output_directory / thumbnail, compress_level=4)
             previews.append({"filename": filename, "thumbnail": thumbnail, "subfolder": subfolder,
-                             "type": "temp", "width": image.width, "height": image.height, "index": index})
+                             "type": "temp", "width": image.width, "height": image.height, "index": index,
+                             "label": frame_labels[index - 1] if index <= len(frame_labels) else None})
 
         return {"ui": {"ninetosix_images": previews, "ninetosix_columns": [column_count],
                        "ninetosix_thumbnail_size": [size], "ninetosix_total": [len(previews)]},
                 "result": (frames,)}
+
+
+class NineToSixImageCompare:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {"required": {
+            "image_a": ("IMAGE",),
+            "image_b": ("IMAGE",),
+            "mode": (["side_by_side", "slider", "difference"], {"default": "side_by_side"}),
+            "labels": ("STRING", {"default": "A,B", "tooltip": "Comma-separated labels for image A and B."}),
+        }}
+
+    RETURN_TYPES = ("IMAGE", "IMAGE")
+    RETURN_NAMES = ("image_a", "image_b")
+    OUTPUT_NODE = True
+    FUNCTION = "compare"
+    CATEGORY = "9to6/Image"
+    DESCRIPTION = "Compare two images side-by-side, with a slider, or as a difference heatmap."
+    SEARCH_ALIASES = ["image compare", "before after", "difference", "비교", "이미지 비교"]
+
+    def compare(self, image_a, image_b, mode, labels):
+        import folder_paths
+        import numpy as np
+        from PIL import Image
+
+        if len(image_a.shape) != 4 or len(image_b.shape) != 4:
+            raise ValueError("Compare expects IMAGE tensors shaped [batch, height, width, channels].")
+        if image_a.shape[0] != 1 or image_b.shape[0] != 1:
+            raise ValueError("Compare accepts exactly one image per input. Use Image Grid for batches.")
+
+        array_a = image_a[0].detach().cpu().float().numpy()
+        array_b = image_b[0].detach().cpu().float().numpy()
+        array_a = np.nan_to_num(np.clip(array_a, 0, 1), nan=0.0)
+        array_b = np.nan_to_num(np.clip(array_b, 0, 1), nan=0.0)
+        if array_a.shape != array_b.shape:
+            raise ValueError(f"Images must have the same dimensions. A: {array_a.shape}, B: {array_b.shape}")
+
+        label_a, label_b = (labels.split(",") + ["", ""])[:2] if labels else ("A", "B")
+
+        if mode == "difference":
+            diff = np.abs(array_a - array_b)
+            heatmap = np.zeros((*diff.shape[:2], 3), dtype=np.float32)
+            heatmap[..., 0] = diff.mean(axis=-1) * 4.0
+            heatmap[..., 1] = diff.mean(axis=-1) * 1.5
+            heatmap = np.clip(heatmap, 0, 1)
+            preview_array = heatmap
+        else:
+            preview_array = array_a
+
+        subfolder = f"9to6-compare/{uuid.uuid4().hex}"
+        output_directory = Path(folder_paths.get_temp_directory()) / subfolder
+        output_directory.mkdir(parents=True, exist_ok=False)
+
+        for name, array in (("a", array_a), ("b", array_b), ("preview", preview_array)):
+            pixels = (array * 255).round().astype(np.uint8)
+            if pixels.shape[-1] == 1:
+                pixels = pixels[..., 0]
+            Image.fromarray(pixels).save(output_directory / f"{name}.png", compress_level=1)
+
+        height, width = array_a.shape[:2]
+        return {
+            "ui": {
+                "ninetosix_compare": {
+                    "a": {"filename": "a.png", "subfolder": subfolder, "type": "temp", "width": width, "height": height, "label": label_a.strip() or "A"},
+                    "b": {"filename": "b.png", "subfolder": subfolder, "type": "temp", "width": width, "height": height, "label": label_b.strip() or "B"},
+                    "mode": mode,
+                    "difference": mode == "difference",
+                }
+            },
+            "result": (image_a, image_b),
+        }

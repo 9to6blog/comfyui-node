@@ -114,7 +114,8 @@ export function createGallery(node, api) {
             grid.append(emptyState);
         }
         items.forEach((item, index) => {
-            const tile = button(`${String(index + 1).padStart(2, "0")} · ${item.width} × ${item.height}`, () => { activeDialog = openLightbox(items, index, api); }, `이미지 ${index + 1} 크게 보기`);
+            const caption = item.label ? `${item.label} · ${item.width} × ${item.height}` : `${String(index + 1).padStart(2, "0")} · ${item.width} × ${item.height}`;
+            const tile = button(caption, () => { activeDialog = openLightbox(items, index, api); }, `이미지 ${index + 1} 크게 보기`);
             tile.className = "ns-image-tile";
             const image = document.createElement("img");
             image.loading = "lazy";
