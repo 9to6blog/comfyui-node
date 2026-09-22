@@ -2,6 +2,8 @@
 
 ComfyUI custom nodes by 9to6. 각 기능의 코드는 별도 폴더에 관리합니다.
 
+Windows를 재설치하거나 다른 PC로 옮길 때는 [포맷 후 복원 안내](POST-FORMAT-RECOVERY.md)에서 설치 경로, 개발 검사와 사용자 데이터 보관 범위를 확인하세요.
+
 | 폴더 | 노드 | 기능 |
 | --- | --- | --- |
 | [prompt_switch](prompt_switch/) | **9to6 Multi Prompt Switcher** | 제목이 있는 프롬프트 카드를 추가·제거하고 한 번에 하나만 선택해 출력 |
