@@ -11,6 +11,8 @@ MODELS = [
     ('Comfy-Org/Qwen-Image_ComfyUI', '1f12b17be14c89b026c51a91d67c32f84bb047bc', 'split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors', 'text_encoders', 9384670680, 'cb5636d852a0ea6a9075ab1bef496c0db7aef13c02350571e388aea959c5c0b4'),
     ('Comfy-Org/Qwen-Image_ComfyUI', '1f12b17be14c89b026c51a91d67c32f84bb047bc', 'split_files/vae/qwen_image_vae.safetensors', 'vae', 253806246, 'a70580f0213e67967ee9c95f05bb400e8fb08307e017a924bf3441223e023d1f'),
     ('lightx2v/Qwen-Image-2512-Lightning', 'a52649c9d0f6e1a248bff13f0df33bb8a2abdb52', 'Qwen-Image-2512-Lightning-4steps-V1.0-fp32.safetensors', 'loras', 1698951104, 'ad12117461cb41e2ea637fec8df6392ce8e8550c47fbe2b829ed3deb98262066'),
+    ('unsloth/Qwen2.5-VL-7B-Instruct-GGUF', '68bb8bc4b7df5289c143aaec0ab477a7d4051aab', 'Qwen2.5-VL-7B-Instruct-UD-Q4_K_XL.gguf', 'text_encoders', 4785159040, '8edd10e3ae170ab8b8d114e70763ff63a220f16deec9a56acf9330034efc0bb5'),
+    ('unsloth/Qwen2.5-VL-7B-Instruct-GGUF', '68bb8bc4b7df5289c143aaec0ab477a7d4051aab', 'mmproj-BF16.gguf', 'text_encoders', 1354163040, 'f0edf43c09b69d6e5dd24262f33b356a1e9dd978e7c3299b3e69141fcbb87553', 'Qwen2.5-VL-7B-Instruct-mmproj-BF16.gguf'),
 ]
 
 def digest(path):
@@ -18,8 +20,8 @@ def digest(path):
         return hashlib.file_digest(f, 'sha256').hexdigest()
 
 def download(model):
-    repo, revision, filename, folder, size, sha256 = model
-    target = ROOT / folder / Path(filename).name
+    repo, revision, filename, folder, size, sha256 = model[:6]
+    target = ROOT / folder / (model[6] if len(model)>6 else Path(filename).name)
     url = f'https://huggingface.co/{repo}/resolve/{revision}/{filename}'
     target.parent.mkdir(parents=True, exist_ok=True)
     if target.exists():

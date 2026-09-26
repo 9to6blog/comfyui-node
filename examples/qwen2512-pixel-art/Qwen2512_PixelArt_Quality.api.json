@@ -9,14 +9,13 @@
     }
   },
   "2": {
-    "class_type": "CLIPLoader",
+    "class_type": "CLIPLoaderGGUF",
     "inputs": {
-      "clip_name": "qwen_2.5_vl_7b_fp8_scaled.safetensors",
-      "type": "qwen_image",
-      "device": "default"
+      "clip_name": "Qwen2.5-VL-7B-Instruct-UD-Q4_K_XL.gguf",
+      "type": "qwen_image"
     },
     "_meta": {
-      "title": "02 · Qwen 2.5 VL 텍스트 인코더"
+      "title": "02 · Qwen 2.5 VL · 메모리 절약"
     }
   },
   "3": {

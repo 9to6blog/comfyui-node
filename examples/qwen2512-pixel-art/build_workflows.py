@@ -30,7 +30,7 @@ def make_graph(fast):
     def add(i, kind, title, **inputs):
         graph[str(i)] = {'class_type': kind, 'inputs': inputs, '_meta': {'title': title}}
     add(1, 'UnetLoaderGGUF', '01 · Qwen Image 2512 · 16GB GPU', unet_name='qwen-image-2512-Q4_K_M.gguf')
-    add(2, 'CLIPLoader', '02 · Qwen 2.5 VL 텍스트 인코더', clip_name='qwen_2.5_vl_7b_fp8_scaled.safetensors', type='qwen_image', device='default')
+    add(2, 'CLIPLoaderGGUF', '02 · Qwen 2.5 VL · 메모리 절약', clip_name='Qwen2.5-VL-7B-Instruct-UD-Q4_K_XL.gguf', type='qwen_image')
     add(3, 'VAELoader', '03 · Qwen Image VAE', vae_name='qwen_image_vae.safetensors')
     add(4, 'CLIPTextEncode', '프롬프트 · 피사체를 바꿔 사용', text=POSITIVE, clip=['2', 0])
     add(5, 'CLIPTextEncode', '제외할 표현' + (' · CFG 1에서는 영향 없음' if fast else ''), text=NEGATIVE, clip=['2', 0])

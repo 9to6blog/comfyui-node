@@ -55,29 +55,42 @@ E:\ComfyUI\ComfyUI\output\Qwen2512PixelArt\
 
 RTX 5070 Ti 16GB / RAM 32GB에 맞춰 확산 모델은 Unsloth GGUF Q4_K_M을 사용합니다.
 BF16 원본과 동일한 수치 정밀도는 아니며, 양자화에 따른 차이가 있을 수 있습니다.
-텍스트 인코더는 Comfy-Org FP8, VAE는 Comfy-Org 배포본입니다.
+텍스트 인코더도 Unsloth GGUF Q4_K_XL을 사용해 메모리 사용을 줄였습니다. VAE는 Comfy-Org 배포본입니다.
 
 | 폴더 | 파일 |
 | --- | --- |
 | models/unet | qwen-image-2512-Q4_K_M.gguf |
-| models/text_encoders | qwen_2.5_vl_7b_fp8_scaled.safetensors |
+| models/text_encoders | Qwen2.5-VL-7B-Instruct-UD-Q4_K_XL.gguf |
+| models/text_encoders | Qwen2.5-VL-7B-Instruct-mmproj-BF16.gguf |
 | models/vae | qwen_image_vae.safetensors |
 | models/loras | Qwen-Image-2512-Lightning-4steps-V1.0-fp32.safetensors |
 
 기존 설치된 **ComfyUI-GGUF**와 ComfyUI 기본 노드만 필요합니다.
 Qwen 2.1용 Qwen3-VL 인코더나 2.1 VAE로 바꾸면 안 됩니다.
-추가 다운로드는 약 24.33GB이며 기존 Qwen Image VAE는 SHA-256 확인 후 재사용합니다.
+기존 Qwen Image VAE는 SHA-256 확인 후 재사용합니다.
+호환용 `qwen_2.5_vl_7b_fp8_scaled.safetensors`도 추가로 받아 두었지만, 기본 워크플로우는 메모리가 적게 드는 GGUF 인코더를 선택합니다.
+FP8 인코더를 쓰려면 `CLIPLoader` 기본 노드로 바꾸고 type을 `qwen_image`로 지정해야 합니다.
+기본 사용 모델은 VAE 포함 약 21.34GB이며, 추가 FP8 인코더는 약 9.38GB입니다.
 모든 파일의 고정 리비전·용량·SHA-256은 `model-manifest.json`에 기록합니다.
 
 VRAM 부족 시 다른 GPU 작업을 닫고 생성 크기를 768×768로 낮추세요.
+Windows 시스템 메모리 할당 부족(`DefaultCPUAllocator: not enough memory`)은 별도 문제입니다. 사용하지 않는 프로그램과 WSL을 직접 종료해 메모리를 확보한 후 실행하세요.
+GPU가 16GB이더라도 CPU 메모리/가상 메모리가 부족하면 모델을 로드할 수 없습니다.
 배치 크기는 1, 타일 VAE 디코드는 512를 유지하세요.
 테스트 서버는 기존 사용자 설정과 분리하여 GGUF와 기본 노드만 로드합니다.
 
+## 현재 상태
+
+모델 다운로드·SHA-256 확인, 새 워크플로우 작성·배치, 노드 연결 확인을 완료했습니다.
+실제 이미지 생성은 Windows 메모리 할당 부족 및 접근 위반으로 완료되지 않았습니다.
+이후 사용자 요청에 따라 추가 생성 검증을 중단하고 테스트 프로세스를 종료했습니다.
+WSL이나 다른 사용자 프로그램은 종료하지 않았습니다.
+
 ## 복구 및 재생성
 
-`download_models.py --comfy-root E:\ComfyUI\ComfyUI`는 고정 리비전에서 다운로드하고 SHA-256을 확인합니다.
+`python download_models.py --comfy-root E:\ComfyUI\ComfyUI`는 고정 리비전에서 다운로드하고 SHA-256을 확인합니다.
 기존 파일이 다르면 덮어쓰지 않고 중단합니다. 중단된 다운로드는 `.download`에서 이어 받습니다.
-ComfyUI가 실행 중일 때 `build_workflows.py --url http://127.0.0.1:8188 --output .`으로 새 그래프를 다시 만들 수 있습니다.
+ComfyUI가 실행 중일 때 `python build_workflows.py --url http://127.0.0.1:8188 --output .`으로 새 그래프를 다시 만들 수 있습니다.
 두 스크립트 모두 모델/노드 스키마만 사용하며 기존 사용자 워크플로우를 읽지 않습니다.
 
 ## 참고
