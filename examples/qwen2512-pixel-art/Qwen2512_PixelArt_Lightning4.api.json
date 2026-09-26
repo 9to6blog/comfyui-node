@@ -1,0 +1,229 @@
+{
+  "1": {
+    "class_type": "UnetLoaderGGUF",
+    "inputs": {
+      "unet_name": "qwen-image-2512-Q4_K_M.gguf"
+    },
+    "_meta": {
+      "title": "01 · Qwen Image 2512 · 16GB GPU"
+    }
+  },
+  "2": {
+    "class_type": "CLIPLoader",
+    "inputs": {
+      "clip_name": "qwen_2.5_vl_7b_fp8_scaled.safetensors",
+      "type": "qwen_image",
+      "device": "default"
+    },
+    "_meta": {
+      "title": "02 · Qwen 2.5 VL 텍스트 인코더"
+    }
+  },
+  "3": {
+    "class_type": "VAELoader",
+    "inputs": {
+      "vae_name": "qwen_image_vae.safetensors"
+    },
+    "_meta": {
+      "title": "03 · Qwen Image VAE"
+    }
+  },
+  "4": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "text": "Pixel art of a single majestic fire phoenix, a fantasy RPG boss monster sprite. Full body in a dynamic three-quarter battle pose, facing left, wings spread, with every wing tip and tail feather fully inside the frame and generous empty margins. Authentic hand-pixelled late-1990s 16-bit arcade game art. Crisp deliberate square pixel clusters, clean dark outline, strong readable silhouette, rich red, orange and gold feathers, a restrained color palette, stepped highlights and shadows. One isolated character centered on a completely plain pure white background. No text, no UI, no border, no ground plane, no cast shadow.",
+      "clip": [
+        "2",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "프롬프트 · 피사체를 바꿔 사용"
+    }
+  },
+  "5": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "text": "Photograph, 3D rendering, smooth vector illustration, soft airbrush shading, blur, anti-aliased edges, smooth gradients, noisy scattered pixels, illegible silhouette, cropped wings, cut-off tail, multiple characters, sprite sheet, detailed background, text, watermark, logo, grid, checkerboard background.",
+      "clip": [
+        "2",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "제외할 표현 · CFG 1에서는 영향 없음"
+    }
+  },
+  "6": {
+    "class_type": "EmptySD3LatentImage",
+    "inputs": {
+      "width": 1024,
+      "height": 1024,
+      "batch_size": 1
+    },
+    "_meta": {
+      "title": "생성 크기 · 배치 크기 1"
+    }
+  },
+  "17": {
+    "class_type": "LoraLoaderModelOnly",
+    "inputs": {
+      "model": [
+        "1",
+        0
+      ],
+      "lora_name": "Qwen-Image-2512-Lightning-4steps-V1.0-fp32.safetensors",
+      "strength_model": 1.0
+    },
+    "_meta": {
+      "title": "2512 전용 Lightning · 4 steps"
+    }
+  },
+  "7": {
+    "class_type": "ModelSamplingAuraFlow",
+    "inputs": {
+      "model": [
+        "17",
+        0
+      ],
+      "shift": 3.0,
+      "sampling": "flow"
+    },
+    "_meta": {
+      "title": "Qwen Flow Sampling"
+    }
+  },
+  "8": {
+    "class_type": "KSampler",
+    "inputs": {
+      "model": [
+        "7",
+        0
+      ],
+      "seed": 20260926,
+      "steps": 4,
+      "cfg": 1.0,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "positive": [
+        "4",
+        0
+      ],
+      "negative": [
+        "5",
+        0
+      ],
+      "latent_image": [
+        "6",
+        0
+      ],
+      "denoise": 1.0
+    },
+    "_meta": {
+      "title": "4스텝 초안"
+    }
+  },
+  "9": {
+    "class_type": "VAEDecodeTiled",
+    "inputs": {
+      "samples": [
+        "8",
+        0
+      ],
+      "vae": [
+        "3",
+        0
+      ],
+      "tile_size": 512,
+      "overlap": 64,
+      "temporal_size": 64,
+      "temporal_overlap": 8
+    },
+    "_meta": {
+      "title": "타일 디코드 · VRAM 절약"
+    }
+  },
+  "10": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": [
+        "9",
+        0
+      ],
+      "filename_prefix": "Qwen2512PixelArt/lightning4/raw"
+    },
+    "_meta": {
+      "title": "원본 저장 · 후처리 전"
+    }
+  },
+  "11": {
+    "class_type": "ImageScale",
+    "inputs": {
+      "image": [
+        "9",
+        0
+      ],
+      "upscale_method": "nearest-exact",
+      "width": 128,
+      "height": 128,
+      "crop": "disabled"
+    },
+    "_meta": {
+      "title": "픽셀 캔버스 · 64 / 128 / 256"
+    }
+  },
+  "12": {
+    "class_type": "ImageQuantize",
+    "inputs": {
+      "image": [
+        "11",
+        0
+      ],
+      "colors": 32,
+      "dither": "none"
+    },
+    "_meta": {
+      "title": "최대 32색 · 디더링 없음"
+    }
+  },
+  "13": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": [
+        "12",
+        0
+      ],
+      "filename_prefix": "Qwen2512PixelArt/lightning4/sprite"
+    },
+    "_meta": {
+      "title": "픽셀 원본 저장 · 128px / 32색"
+    }
+  },
+  "14": {
+    "class_type": "ImageScaleBy",
+    "inputs": {
+      "image": [
+        "12",
+        0
+      ],
+      "upscale_method": "nearest-exact",
+      "scale_by": 8.0
+    },
+    "_meta": {
+      "title": "픽셀 유지 · 8배 확대"
+    }
+  },
+  "15": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": [
+        "14",
+        0
+      ],
+      "filename_prefix": "Qwen2512PixelArt/lightning4/preview"
+    },
+    "_meta": {
+      "title": "확대본 저장 · 1024px"
+    }
+  }
+}

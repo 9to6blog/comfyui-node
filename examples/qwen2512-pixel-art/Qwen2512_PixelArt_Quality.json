@@ -1,0 +1,821 @@
+{
+  "id": "14a87ce4-2149-593f-bb05-9383cdeaac48",
+  "revision": 0,
+  "last_node_id": 16,
+  "last_link_id": 15,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "UnetLoaderGGUF",
+      "pos": [
+        40,
+        80
+      ],
+      "size": [
+        340,
+        120
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            3
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "UnetLoaderGGUF"
+      },
+      "widgets_values": [
+        "qwen-image-2512-Q4_K_M.gguf"
+      ],
+      "title": "01 · Qwen Image 2512 · 16GB GPU"
+    },
+    {
+      "id": 2,
+      "type": "CLIPLoader",
+      "pos": [
+        40,
+        290
+      ],
+      "size": [
+        340,
+        155
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            1,
+            2
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPLoader"
+      },
+      "widgets_values": [
+        "qwen_2.5_vl_7b_fp8_scaled.safetensors",
+        "qwen_image",
+        "default"
+      ],
+      "title": "02 · Qwen 2.5 VL 텍스트 인코더"
+    },
+    {
+      "id": 3,
+      "type": "VAELoader",
+      "pos": [
+        40,
+        520
+      ],
+      "size": [
+        340,
+        110
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [
+            9
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAELoader"
+      },
+      "widgets_values": [
+        "qwen_image_vae.safetensors"
+      ],
+      "title": "03 · Qwen Image VAE"
+    },
+    {
+      "id": 4,
+      "type": "CLIPTextEncode",
+      "pos": [
+        430,
+        80
+      ],
+      "size": [
+        480,
+        260
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 1
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            5
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "widgets_values": [
+        "Pixel art of a single majestic fire phoenix, a fantasy RPG boss monster sprite. Full body in a dynamic three-quarter battle pose, facing left, wings spread, with every wing tip and tail feather fully inside the frame and generous empty margins. Authentic hand-pixelled late-1990s 16-bit arcade game art. Crisp deliberate square pixel clusters, clean dark outline, strong readable silhouette, rich red, orange and gold feathers, a restrained color palette, stepped highlights and shadows. One isolated character centered on a completely plain pure white background. No text, no UI, no border, no ground plane, no cast shadow."
+      ],
+      "title": "프롬프트 · 피사체를 바꿔 사용",
+      "color": "#233b31",
+      "bgcolor": "#294a3b"
+    },
+    {
+      "id": 5,
+      "type": "CLIPTextEncode",
+      "pos": [
+        430,
+        390
+      ],
+      "size": [
+        480,
+        220
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 2
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            6
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "widgets_values": [
+        "Photograph, 3D rendering, smooth vector illustration, soft airbrush shading, blur, anti-aliased edges, smooth gradients, noisy scattered pixels, illegible silhouette, cropped wings, cut-off tail, multiple characters, sprite sheet, detailed background, text, watermark, logo, grid, checkerboard background."
+      ],
+      "title": "제외할 표현",
+      "color": "#41272b",
+      "bgcolor": "#53353a"
+    },
+    {
+      "id": 6,
+      "type": "EmptySD3LatentImage",
+      "pos": [
+        430,
+        650
+      ],
+      "size": [
+        340,
+        140
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            7
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "EmptySD3LatentImage"
+      },
+      "widgets_values": [
+        1024,
+        1024,
+        1
+      ],
+      "title": "생성 크기 · 배치 크기 1"
+    },
+    {
+      "id": 7,
+      "type": "ModelSamplingAuraFlow",
+      "pos": [
+        40,
+        730
+      ],
+      "size": [
+        340,
+        130
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 3
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            4
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ModelSamplingAuraFlow"
+      },
+      "widgets_values": [
+        3.1,
+        "flow"
+      ],
+      "title": "Qwen Flow Sampling"
+    },
+    {
+      "id": 8,
+      "type": "KSampler",
+      "pos": [
+        980,
+        80
+      ],
+      "size": [
+        330,
+        325
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 4
+        },
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 5
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 6
+        },
+        {
+          "name": "latent_image",
+          "type": "LATENT",
+          "link": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            8
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "KSampler"
+      },
+      "widgets_values": [
+        20260926,
+        "increment",
+        30,
+        4.0,
+        "euler",
+        "simple",
+        1.0
+      ],
+      "title": "품질 생성 · 30 steps / CFG 4"
+    },
+    {
+      "id": 9,
+      "type": "VAEDecodeTiled",
+      "pos": [
+        980,
+        480
+      ],
+      "size": [
+        330,
+        220
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "link": 8
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 9
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            10,
+            11
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAEDecodeTiled"
+      },
+      "widgets_values": [
+        512,
+        64,
+        64,
+        8
+      ],
+      "title": "타일 디코드 · VRAM 절약"
+    },
+    {
+      "id": 10,
+      "type": "SaveImage",
+      "pos": [
+        1370,
+        80
+      ],
+      "size": [
+        330,
+        390
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 10
+        }
+      ],
+      "outputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "links": [],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": [
+        "Qwen2512PixelArt/quality/raw"
+      ],
+      "title": "원본 저장 · 후처리 전"
+    },
+    {
+      "id": 11,
+      "type": "ImageScale",
+      "pos": [
+        1370,
+        560
+      ],
+      "size": [
+        320,
+        200
+      ],
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 11
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            12
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ImageScale"
+      },
+      "widgets_values": [
+        "nearest-exact",
+        128,
+        128,
+        "disabled"
+      ],
+      "title": "픽셀 캔버스 · 64 / 128 / 256"
+    },
+    {
+      "id": 12,
+      "type": "ImageQuantize",
+      "pos": [
+        1750,
+        560
+      ],
+      "size": [
+        320,
+        130
+      ],
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 12
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            13,
+            14
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ImageQuantize"
+      },
+      "widgets_values": [
+        32,
+        "none"
+      ],
+      "title": "최대 32색 · 디더링 없음"
+    },
+    {
+      "id": 13,
+      "type": "SaveImage",
+      "pos": [
+        2140,
+        80
+      ],
+      "size": [
+        360,
+        400
+      ],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 13
+        }
+      ],
+      "outputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "links": [],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": [
+        "Qwen2512PixelArt/quality/sprite"
+      ],
+      "title": "픽셀 원본 저장 · 128px / 32색"
+    },
+    {
+      "id": 14,
+      "type": "ImageScaleBy",
+      "pos": [
+        1750,
+        780
+      ],
+      "size": [
+        320,
+        130
+      ],
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 14
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            15
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ImageScaleBy"
+      },
+      "widgets_values": [
+        "nearest-exact",
+        8.0
+      ],
+      "title": "픽셀 유지 · 8배 확대"
+    },
+    {
+      "id": 15,
+      "type": "SaveImage",
+      "pos": [
+        2140,
+        590
+      ],
+      "size": [
+        360,
+        400
+      ],
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 15
+        }
+      ],
+      "outputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "links": [],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": [
+        "Qwen2512PixelArt/quality/preview"
+      ],
+      "title": "확대본 저장 · 1024px"
+    },
+    {
+      "id": 16,
+      "type": "Note",
+      "pos": [
+        40,
+        1080
+      ],
+      "size": [
+        870,
+        420
+      ],
+      "flags": {},
+      "order": 15,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "properties": {},
+      "widgets_values": [
+        "QWEN IMAGE 2512 / PIXEL ART\n\n1. 녹색 프롬프트에서 피사체를 바꾸고 Run.\n2. 기본: 1024px 생성 → 128px, 최대 32색 → 8배 확대.\n3. 원본 / 픽셀 원본 / 확대본 세 가지를 저장합니다.\n4. 작은 스프라이트: ImageScale 64×64, scale_by 8.\n5. 큰 보스: ImageScale 256×256, scale_by 4.\n6. 여러 장: batch_size=1 유지, Run 횟수 증가.\n7. seed는 increment. 재현/비교 시 fixed로 변경.\n8. RGB 흰 배경입니다. 실제 투명 PNG는 별도 배경 제거가 필요합니다.\n\n기본 30 steps / CFG 4 / Euler / simple.\n세부 묘사 부족 시 steps를 40~50으로 조정.\n\nComfyUI-GGUF + 기본 노드만 사용.\n기존 사용자 워크플로우를 읽거나 복사하지 않고 신규 작성."
+      ],
+      "title": "사용법 / 설정 가이드",
+      "color": "#293746",
+      "bgcolor": "#35465a"
+    }
+  ],
+  "links": [
+    [
+      1,
+      2,
+      0,
+      4,
+      0,
+      "CLIP"
+    ],
+    [
+      2,
+      2,
+      0,
+      5,
+      0,
+      "CLIP"
+    ],
+    [
+      3,
+      1,
+      0,
+      7,
+      0,
+      "MODEL"
+    ],
+    [
+      4,
+      7,
+      0,
+      8,
+      0,
+      "MODEL"
+    ],
+    [
+      5,
+      4,
+      0,
+      8,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      6,
+      5,
+      0,
+      8,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      7,
+      6,
+      0,
+      8,
+      3,
+      "LATENT"
+    ],
+    [
+      8,
+      8,
+      0,
+      9,
+      0,
+      "LATENT"
+    ],
+    [
+      9,
+      3,
+      0,
+      9,
+      1,
+      "VAE"
+    ],
+    [
+      10,
+      9,
+      0,
+      10,
+      0,
+      "IMAGE"
+    ],
+    [
+      11,
+      9,
+      0,
+      11,
+      0,
+      "IMAGE"
+    ],
+    [
+      12,
+      11,
+      0,
+      12,
+      0,
+      "IMAGE"
+    ],
+    [
+      13,
+      12,
+      0,
+      13,
+      0,
+      "IMAGE"
+    ],
+    [
+      14,
+      12,
+      0,
+      14,
+      0,
+      "IMAGE"
+    ],
+    [
+      15,
+      14,
+      0,
+      15,
+      0,
+      "IMAGE"
+    ]
+  ],
+  "groups": [
+    {
+      "id": 1,
+      "title": "1 · 모델 로드",
+      "bounding": [
+        10,
+        10,
+        390,
+        1020
+      ],
+      "color": "#37667a",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 2,
+      "title": "2 · 프롬프트 / 생성 크기",
+      "bounding": [
+        410,
+        10,
+        520,
+        850
+      ],
+      "color": "#3c765b",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 3,
+      "title": "3 · 생성 / 디코드",
+      "bounding": [
+        950,
+        10,
+        390,
+        850
+      ],
+      "color": "#826343",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 4,
+      "title": "4 · 원본 + 픽셀 변환 / 저장",
+      "bounding": [
+        1350,
+        10,
+        1190,
+        1030
+      ],
+      "color": "#6b557c",
+      "font_size": 24,
+      "flags": {}
+    }
+  ],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.55,
+      "offset": [
+        40,
+        70
+      ]
+    },
+    "frontendVersion": "1.53.6"
+  },
+  "version": 0.4
+}
